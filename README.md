@@ -1,0 +1,1 @@
+# MHWilds-talisman-manager
