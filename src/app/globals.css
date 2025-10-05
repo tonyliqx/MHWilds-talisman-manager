@@ -1,0 +1,87 @@
+@import "tailwindcss";
+
+:root {
+  --foreground-rgb: 0, 0, 0;
+  --background-start-rgb: 245, 222, 179;
+  --background-end-rgb: 255, 248, 220;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --foreground-rgb: 255, 255, 255;
+    --background-start-rgb: 47, 27, 20;
+    --background-end-rgb: 139, 69, 19;
+  }
+}
+
+body {
+  color: rgb(var(--foreground-rgb));
+  background: linear-gradient(
+      to bottom,
+      transparent,
+      rgb(var(--background-end-rgb))
+    )
+    rgb(var(--background-start-rgb));
+  min-height: 100vh;
+}
+
+.mh-card {
+  background-color: #fef3c7;
+  backdrop-filter: blur(4px);
+  border: 1px solid #fde68a;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+.mh-button {
+  background-color: #92400e;
+  color: white;
+  font-weight: 500;
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  transition: background-color 0.2s;
+}
+
+.mh-button:hover {
+  background-color: #b45309;
+}
+
+.mh-button-secondary {
+  background-color: #d97706;
+  color: white;
+  font-weight: 500;
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  transition: background-color 0.2s;
+}
+
+.mh-button-secondary:hover {
+  background-color: #ea580c;
+}
+
+.mh-input {
+  border: 1px solid #fbbf24;
+  border-radius: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background-color: white;
+  outline: none;
+}
+
+.mh-input:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px #facc15;
+  border-color: transparent;
+}
+
+.mh-select {
+  border: 1px solid #fbbf24;
+  border-radius: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background-color: white;
+  outline: none;
+}
+
+.mh-select:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px #facc15;
+  border-color: transparent;
+}
