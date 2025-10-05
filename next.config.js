@@ -2,8 +2,8 @@
 const isDev = process.env.NODE_ENV === 'development'
 
 const nextConfig = {
-  // Only use static export for production builds
-  ...(isDev ? {} : {
+  // Static export only for production (GitHub Pages)
+  ...(!isDev && {
     output: 'export',
     trailingSlash: true,
     basePath: '/MHWilds-talisman-manager',
