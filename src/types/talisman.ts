@@ -25,17 +25,12 @@ export interface TalismanTemplate {
 
 export interface UserTalisman {
   id: string;
-  name: string;
   rarity: string;
   skill1: string;
-  skill1Level: number;
   skill2: string;
-  skill2Level: number;
   skill3: string;
-  skill3Level: number;
   slotDescription: string;
   slotPt: number;
-  notes?: string;
 }
 
 export interface SlotMapping {
@@ -60,3 +55,10 @@ export const RARITY_OPTIONS = [
   "稀有度7",
   "稀有度8"
 ];
+
+export const RARITY_LABELS = {
+  "稀有度5": "5",
+  "稀有度6": "6", 
+  "稀有度7": "7",
+  "稀有度8": "8"
+};

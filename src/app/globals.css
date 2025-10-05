@@ -77,6 +77,7 @@ body {
   border-radius: 0.5rem;
   padding: 0.5rem 0.75rem;
   background-color: white;
+  color: #374151;
   outline: none;
 }
 
@@ -84,4 +85,25 @@ body {
   outline: none;
   box-shadow: 0 0 0 2px #facc15;
   border-color: transparent;
+}
+
+.mh-select option {
+  background-color: white;
+  color: #374151;
+}
+
+.mh-select option:checked {
+  background-color: #fbbf24;
+  color: #374151;
+}
+
+.mh-select option:hover {
+  background-color: #fef3c7;
+  color: #374151;
+}
+
+/* Ensure selected text in dropdown is visible */
+.mh-select:focus option:checked {
+  background-color: #fbbf24;
+  color: #374151;
 }

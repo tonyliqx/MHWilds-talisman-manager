@@ -43,9 +43,6 @@ export default function TalismanTable({ talismans, onEdit, onDelete, onReorder }
           <thead>
             <tr className="bg-amber-200/10">
               <th className="border border-amber-300/20 px-4 py-3 text-left text-gray-700 font-semibold">
-                Name
-              </th>
-              <th className="border border-amber-300/20 px-4 py-3 text-left text-gray-700 font-semibold">
                 Rarity
               </th>
               <th className="border border-amber-300/20 px-4 py-3 text-left text-gray-700 font-semibold">
@@ -53,9 +50,6 @@ export default function TalismanTable({ talismans, onEdit, onDelete, onReorder }
               </th>
               <th className="border border-amber-300/20 px-4 py-3 text-left text-gray-700 font-semibold">
                 Slots
-              </th>
-              <th className="border border-amber-300/20 px-4 py-3 text-left text-gray-700 font-semibold">
-                Notes
               </th>
               <th className="border border-amber-300/20 px-4 py-3 text-left text-gray-700 font-semibold">
                 Actions
@@ -72,9 +66,6 @@ export default function TalismanTable({ talismans, onEdit, onDelete, onReorder }
                 onDrop={(e) => handleDrop(e, index)}
                 className="hover:bg-amber-50/50 transition-colors cursor-move"
               >
-                <td className="border border-amber-300/20 px-4 py-3 text-gray-700 font-medium">
-                  {talisman.name}
-                </td>
                 <td className="border border-amber-300/20 px-4 py-3 text-gray-700">
                   <span className={`px-2 py-1 rounded text-xs font-medium ${
                     talisman.rarity === '稀有度8' ? 'bg-yellow-200 text-yellow-800' :
@@ -82,44 +73,24 @@ export default function TalismanTable({ talismans, onEdit, onDelete, onReorder }
                     talisman.rarity === '稀有度6' ? 'bg-blue-200 text-blue-800' :
                     'bg-gray-200 text-gray-800'
                   }`}>
-                    {talisman.rarity}
+                    {talisman.rarity.replace('稀有度', '')}
                   </span>
                 </td>
                 <td className="border border-amber-300/20 px-4 py-3 text-gray-700">
                   <div className="space-y-1">
                     {talisman.skill1 && (
-                      <div className="text-sm">
-                        <span className="font-medium">{talisman.skill1}</span>
-                        {talisman.skill1Level > 0 && (
-                          <span className="text-amber-700 ml-1">Lv{talisman.skill1Level}</span>
-                        )}
-                      </div>
+                      <div className="text-sm font-medium">{talisman.skill1}</div>
                     )}
                     {talisman.skill2 && (
-                      <div className="text-sm">
-                        <span className="font-medium">{talisman.skill2}</span>
-                        {talisman.skill2Level > 0 && (
-                          <span className="text-amber-700 ml-1">Lv{talisman.skill2Level}</span>
-                        )}
-                      </div>
+                      <div className="text-sm font-medium">{talisman.skill2}</div>
                     )}
                     {talisman.skill3 && (
-                      <div className="text-sm">
-                        <span className="font-medium">{talisman.skill3}</span>
-                        {talisman.skill3Level > 0 && (
-                          <span className="text-amber-700 ml-1">Lv{talisman.skill3Level}</span>
-                        )}
-                      </div>
+                      <div className="text-sm font-medium">{talisman.skill3}</div>
                     )}
                   </div>
                 </td>
                 <td className="border border-amber-300/20 px-4 py-3 text-gray-700 text-sm">
                   {talisman.slotDescription}
-                </td>
-                <td className="border border-amber-300/20 px-4 py-3 text-gray-700 text-sm max-w-xs">
-                  <div className="truncate" title={talisman.notes}>
-                    {talisman.notes}
-                  </div>
                 </td>
                 <td className="border border-amber-300/20 px-4 py-3">
                   <div className="flex gap-2">

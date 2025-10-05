@@ -66,16 +66,11 @@ export function generateTalismanId(): string {
 // Convert UserTalisman to CSV row
 export function talismanToCSV(talisman: UserTalisman): string {
   return [
-    talisman.name,
     talisman.rarity,
     talisman.skill1,
-    talisman.skill1Level,
     talisman.skill2,
-    talisman.skill2Level,
     talisman.skill3,
-    talisman.skill3Level,
-    talisman.slotDescription,
-    talisman.notes || ''
+    talisman.slotDescription
   ].map(field => `"${String(field).replace(/"/g, '""')}"`).join(',');
 }
 
@@ -85,27 +80,22 @@ export function csvToTalisman(row: string, index: number): UserTalisman {
     field.replace(/^"|"$/g, '').replace(/""/g, '"')
   );
   
-  if (fields.length < 9) {
+  if (fields.length < 5) {
     throw new Error(`Invalid CSV row ${index + 1}: insufficient fields`);
   }
   
-  const slotPt = SLOT_MAPPINGS.find(m => m.description === fields[8])?.slotPt || 1;
+  const slotPt = SLOT_MAPPINGS.find(m => m.description === fields[4])?.slotPt || 1;
   
   return {
     id: generateTalismanId(),
-    name: fields[0] || `Talisman ${index + 1}`,
-    rarity: fields[1] || '稀有度5',
-    skill1: fields[2] || '',
-    skill1Level: parseInt(fields[3]) || 0,
-    skill2: fields[4] || '',
-    skill2Level: parseInt(fields[5]) || 0,
-    skill3: fields[6] || '',
-    skill3Level: parseInt(fields[7]) || 0,
-    slotDescription: fields[8] || '',
-    slotPt: slotPt,
-    notes: fields[9] || ''
+    rarity: fields[0] || '稀有度5',
+    skill1: fields[1] || '',
+    skill2: fields[2] || '',
+    skill3: fields[3] || '',
+    slotDescription: fields[4] || '',
+    slotPt: slotPt
   };
 }
 
 // CSV header
-export const CSV_HEADER = 'Name,Rarity,Skill1,Skill1Level,Skill2,Skill2Level,Skill3,Skill3Level,SlotDescription,Notes';
+export const CSV_HEADER = 'Rarity,Skill1,Skill2,Skill3,SlotDescription';
