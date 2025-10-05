@@ -1,4 +1,4 @@
-import { TalismanTemplate, UserTalisman, SLOT_MAPPINGS } from '@/types/talisman';
+import { TalismanTemplate, UserTalisman, SLOT_MAPPINGS, SLOT_DETAILED_MAPPINGS } from '@/types/talisman';
 
 // Load talisman templates from JSON
 export async function loadTalismanTemplates(): Promise<TalismanTemplate[]> {
@@ -143,37 +143,77 @@ export function generateTalismanId(): string {
   return Date.now().toString(36) + Math.random().toString(36).substr(2);
 }
 
-// Convert UserTalisman to CSV row
-export function talismanToCSV(talisman: UserTalisman): string {
-  return [
-    talisman.rarity,
-    talisman.skill1,
-    talisman.skill2,
-    talisman.skill3,
-    talisman.slotDescription
-  ].map(field => `"${String(field).replace(/"/g, '""')}"`).join(',');
-}
-
-// Parse CSV row to UserTalisman
-export function csvToTalisman(row: string, index: number): UserTalisman {
-  const fields = row.split(',').map(field => 
-    field.replace(/^"|"$/g, '').replace(/""/g, '"')
-  );
+// Parse skill name and level from skill string (e.g., "利刃Lv3" -> ["利刃", 3])
+function parseSkillNameAndLevel(skillString: string): [string, number] {
+  if (!skillString) return ['', 0];
   
-  if (fields.length < 5) {
-    throw new Error(`Invalid CSV row ${index + 1}: insufficient fields`);
+  const match = skillString.match(/^(.+)Lv(\d+)$/);
+  if (match) {
+    return [match[1], parseInt(match[2])];
   }
   
-  const slotPt = SLOT_MAPPINGS.find(m => m.description === fields[4])?.slotPt || 1;
+  // If no Lv format, assume level 1
+  return [skillString, 1];
+}
+
+// Convert UserTalisman to CSV row (new format for external use)
+export function talismanToCSV(talisman: UserTalisman): string {
+  const [skill1Name, skill1Level] = parseSkillNameAndLevel(talisman.skill1);
+  const [skill2Name, skill2Level] = parseSkillNameAndLevel(talisman.skill2);
+  const [skill3Name, skill3Level] = parseSkillNameAndLevel(talisman.skill3);
   
+  // Get detailed slot breakdown from slotPt
+  const slots = SLOT_DETAILED_MAPPINGS[talisman.slotPt] || [1, 0, 0, 0, 0, 0];
+  
+  return [
+    skill1Name, skill1Level,
+    skill2Name, skill2Level,
+    skill3Name, skill3Level,
+    ...slots
+  ].join(',');
+}
+
+// Parse CSV row to UserTalisman (convert from external format to internal format)
+export function csvToTalisman(row: string, index: number): UserTalisman {
+  const fields = row.split(',').map(field =>
+    field.replace(/^"|"$/g, '').replace(/""/g, '"')
+  );
+
+  if (fields.length < 12) {
+    throw new Error(`Invalid CSV row ${index + 1}: insufficient fields (expected 12, got ${fields.length})`);
+  }
+
+  const skill1Name = fields[0] || '';
+  const skill1Level = parseInt(fields[1]) || 0;
+  const skill2Name = fields[2] || '';
+  const skill2Level = parseInt(fields[3]) || 0;
+  const skill3Name = fields[4] || '';
+  const skill3Level = parseInt(fields[5]) || 0;
+  
+  const slots: [number, number, number, number, number, number] = [
+    parseInt(fields[6]) || 0,  // armor1
+    parseInt(fields[7]) || 0,  // armor2
+    parseInt(fields[8]) || 0,  // armor3
+    parseInt(fields[9]) || 0,  // weapon1
+    parseInt(fields[10]) || 0, // weapon2
+    parseInt(fields[11]) || 0  // weapon3
+  ];
+
+  // Find matching slotPt based on slots array
+  const slotPt = Object.entries(SLOT_DETAILED_MAPPINGS).find(([_, slotArray]) =>
+    JSON.stringify(slotArray) === JSON.stringify(slots)
+  )?.[0] || '1';
+
+  const slotDescription = SLOT_MAPPINGS.find(m => m.slotPt === parseInt(slotPt))?.description || '防具1级孔x1';
+
   return {
     id: generateTalismanId(),
-    rarity: fields[0] || '稀有度5',
-    skill1: fields[1] || '',
-    skill2: fields[2] || '',
-    skill3: fields[3] || '',
-    slotDescription: fields[4] || '',
-    slotPt: slotPt
+    rarity: '稀有度5', // Default rarity since it's not in CSV
+    skill1: skill1Name && skill1Level > 0 ? `${skill1Name}Lv${skill1Level}` : '',
+    skill2: skill2Name && skill2Level > 0 ? `${skill2Name}Lv${skill2Level}` : '',
+    skill3: skill3Name && skill3Level > 0 ? `${skill3Name}Lv${skill3Level}` : '',
+    slotDescription,
+    slotPt: parseInt(slotPt)
   };
 }
 
@@ -232,4 +272,4 @@ export function getAvailableSkills3(
 }
 
 // CSV header
-export const CSV_HEADER = 'Rarity,Skill1,Skill2,Skill3,SlotDescription';
+export const CSV_HEADER = 'Skill1,Skill1Level,Skill2,Skill2Level,Skill3,Skill3Level,ArmorSlot1,ArmorSlot2,ArmorSlot3,WeaponSlot1,WeaponSlot2,WeaponSlot3';

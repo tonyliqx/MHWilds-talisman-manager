@@ -122,16 +122,16 @@ export default function TalismanForm({ onSubmit, editingTalisman, onCancel }: Ta
   useEffect(() => {
     if (editingTalisman) {
       setFormData(editingTalisman);
-    } else {
-      setFormData({
-        rarity: '稀有度5',
-        skill1: '',
-        skill2: '',
-        skill3: '',
-        slotDescription: '防具1级孔x1',
-        slotPt: 1
-      });
-    }
+            } else {
+              setFormData({
+                rarity: '稀有度5',
+                skill1: '',
+                skill2: '',
+                skill3: '',
+                slotDescription: '防具1级孔x1',
+                slotPt: 1
+              });
+            }
   }, [editingTalisman]);
 
   // Auto-update slot when rarity changes and current slot is no longer valid
@@ -140,18 +140,18 @@ export default function TalismanForm({ onSubmit, editingTalisman, onCancel }: Ta
       const availableSlots = getAvailableSlots(templates, formData.rarity, []);
       const currentSlotIsValid = availableSlots.some(slot => slot.slotPt === formData.slotPt);
       
-      if (!currentSlotIsValid && availableSlots.length > 0) {
-        // Current slot is invalid, switch to first available slot and clear skills
-        const newSlot = availableSlots[0];
-        setFormData(prev => ({
-          ...prev,
-          slotPt: newSlot.slotPt,
-          slotDescription: newSlot.description,
-          skill1: '',
-          skill2: '',
-          skill3: ''
-        }));
-      }
+              if (!currentSlotIsValid && availableSlots.length > 0) {
+                // Current slot is invalid, switch to first available slot and clear skills
+                const newSlot = availableSlots[0];
+                setFormData(prev => ({
+                  ...prev,
+                  slotPt: newSlot.slotPt,
+                  slotDescription: newSlot.description,
+                  skill1: '',
+                  skill2: '',
+                  skill3: ''
+                }));
+              }
     }
   }, [formData.rarity, templates]);
 
@@ -277,14 +277,14 @@ export default function TalismanForm({ onSubmit, editingTalisman, onCancel }: Ta
             availableSkills={availableSkills1}
             onChange={(value) => setFormData(prev => ({ ...prev, skill1: value }))}
           />
-          
+
           <SkillAutocomplete
             label="Skill 2"
             value={formData.skill2 || ''}
             availableSkills={availableSkills2}
             onChange={(value) => setFormData(prev => ({ ...prev, skill2: value }))}
           />
-          
+
           <SkillAutocomplete
             label="Skill 3"
             value={formData.skill3 || ''}

@@ -14,10 +14,8 @@ export default function ImportExport({ talismans, onImport }: ImportExportProps)
   const [error, setError] = useState('');
 
   const exportToCSV = () => {
-    const csvContent = [
-      CSV_HEADER,
-      ...talismans.map(talismanToCSV)
-    ].join('\n');
+    // Export only the data rows, no header
+    const csvContent = talismans.map(talismanToCSV).join('\n');
     
     setCsvText(csvContent);
   };
@@ -50,13 +48,17 @@ export default function ImportExport({ talismans, onImport }: ImportExportProps)
 
       const lines = csvText.trim().split('\n');
       
-      if (lines.length < 2) {
-        setError('CSV must contain at least a header row and one data row');
+      if (lines.length < 1) {
+        setError('CSV must contain at least one data row');
         return;
       }
 
-      // Skip header row
-      const dataLines = lines.slice(1);
+      // Check if first line is a header (contains non-numeric data)
+      const firstLine = lines[0].split(',');
+      const isHeader = firstLine.some(field => isNaN(parseInt(field.trim())));
+      
+      // Skip header row if it exists
+      const dataLines = isHeader ? lines.slice(1) : lines;
       const importedTalismans: UserTalisman[] = [];
       
       dataLines.forEach((line, index) => {
@@ -65,7 +67,7 @@ export default function ImportExport({ talismans, onImport }: ImportExportProps)
             const talisman = csvToTalisman(line, index);
             importedTalismans.push(talisman);
           } catch (err) {
-            setError(`Error parsing row ${index + 2}: ${err instanceof Error ? err.message : 'Unknown error'}`);
+            setError(`Error parsing row ${isHeader ? index + 2 : index + 1}: ${err instanceof Error ? err.message : 'Unknown error'}`);
             return;
           }
         }
@@ -124,8 +126,9 @@ export default function ImportExport({ talismans, onImport }: ImportExportProps)
             <textarea
               value={csvText}
               onChange={(e) => setCsvText(e.target.value)}
-              className="mh-input w-full h-32 font-mono text-sm"
+              className="mh-input w-full h-32 font-mono text-sm text-gray-700"
               placeholder="CSV data will appear here after export..."
+              style={{ color: '#374151' }}
             />
           </div>
         </div>
@@ -143,7 +146,8 @@ export default function ImportExport({ talismans, onImport }: ImportExportProps)
                 type="file"
                 accept=".csv"
                 onChange={handleFileUpload}
-                className="block w-full text-sm text-gray-700 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-mh-primary file:text-white hover:file:bg-mh-primary/80"
+                className="block w-full text-sm text-gray-700 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-amber-600 file:text-white hover:file:bg-amber-700"
+                style={{ color: '#374151' }}
               />
             </div>
             
