@@ -49,9 +49,7 @@ export default function Home() {
   };
 
   const handleDeleteTalisman = (id: string) => {
-    if (confirm('Are you sure you want to delete this talisman?')) {
-      setTalismans(prev => prev.filter(t => t.id !== id));
-    }
+    setTalismans(prev => prev.filter(t => t.id !== id));
   };
 
   const handleReorder = (fromIndex: number, toIndex: number) => {
