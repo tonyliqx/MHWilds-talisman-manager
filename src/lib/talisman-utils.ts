@@ -78,12 +78,14 @@ function buildReverseMappings(templates: TalismanTemplate[]) {
     templateIndex[key] = template._Rare;
   });
 
-  // Debug: Print entire skill mapping
-  console.log('=== ENTIRE SKILL MAPPING ===');
-  for (const [skillKey, skillPts] of skillToSkillPtMap.entries()) {
-    console.log(`"${skillKey}": [${skillPts.join(', ')}]`);
+  // Debug: Print entire skill mapping (only in development)
+  if (process.env.NODE_ENV === 'development') {
+    console.log('=== ENTIRE SKILL MAPPING ===');
+    skillToSkillPtMap.forEach((skillPts, skillKey) => {
+      console.log(`"${skillKey}": [${skillPts.join(', ')}]`);
+    });
+    console.log('=== END SKILL MAPPING ===');
   }
-  console.log('=== END SKILL MAPPING ===');
 
 }
 
