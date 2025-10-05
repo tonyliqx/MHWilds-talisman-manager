@@ -248,22 +248,27 @@ export default function TalismanForm({ onSubmit, editingTalisman, onCancel }: Ta
           </div>
         </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Decoration Slots
-          </label>
-          <select
-            value={formData.slotPt || 1}
-            onChange={(e) => handleSlotChange(parseInt(e.target.value))}
-            className="mh-select w-full"
-          >
-            {availableSlots.map(mapping => (
-              <option key={mapping.slotPt} value={mapping.slotPt}>
-                {mapping.description}
-              </option>
-            ))}
-          </select>
-        </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Decoration Slots
+                  </label>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                    {availableSlots.map(mapping => (
+                      <button
+                        key={mapping.slotPt}
+                        type="button"
+                        onClick={() => handleSlotChange(mapping.slotPt)}
+                        className={`px-4 py-3 rounded-lg font-medium text-sm transition-colors text-left ${
+                          formData.slotPt === mapping.slotPt
+                            ? 'bg-amber-600 text-white'
+                            : 'bg-amber-100 text-amber-800 hover:bg-amber-200'
+                        }`}
+                      >
+                        {mapping.description}
+                      </button>
+                    ))}
+                  </div>
+                </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <SkillAutocomplete
