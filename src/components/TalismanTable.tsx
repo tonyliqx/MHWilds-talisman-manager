@@ -1,6 +1,6 @@
 'use client';
 
-import { UserTalisman } from '@/types/talisman';
+import { UserTalisman, RARITY_LABELS } from '@/types/talisman';
 
 interface TalismanTableProps {
   talismans: UserTalisman[];
@@ -68,12 +68,13 @@ export default function TalismanTable({ talismans, onEdit, onDelete, onReorder }
               >
                 <td className="border border-amber-300/20 px-4 py-3 text-gray-700">
                   <span className={`px-2 py-1 rounded text-xs font-medium ${
+                    talisman.rarity === 'unknown' ? 'bg-red-200 text-red-800' :
                     talisman.rarity === '稀有度8' ? 'bg-yellow-200 text-yellow-800' :
                     talisman.rarity === '稀有度7' ? 'bg-purple-200 text-purple-800' :
                     talisman.rarity === '稀有度6' ? 'bg-blue-200 text-blue-800' :
                     'bg-gray-200 text-gray-800'
                   }`}>
-                    {talisman.rarity.replace('稀有度', '')}
+                    {RARITY_LABELS[talisman.rarity as keyof typeof RARITY_LABELS]}
                   </span>
                 </td>
                 <td className="border border-amber-300/20 px-4 py-3 text-gray-700">

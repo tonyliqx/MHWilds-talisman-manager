@@ -1,23 +1,90 @@
 import { TalismanTemplate, UserTalisman, SLOT_MAPPINGS, SLOT_DETAILED_MAPPINGS } from '@/types/talisman';
 
+// Reverse mapping structures for CSV import
+interface TemplateIndex {
+  [key: string]: string; // "skill1Pt_skill2Pt_skill3Pt_slotPt" -> rarity
+}
+
+// Global reverse mappings (built once at startup)
+let skillToSkillPtMap: Map<string, number[]> = new Map(); // skill name -> array of skillPts
+let templateIndex: TemplateIndex = {};
+
 // Load talisman templates from JSON
 export async function loadTalismanTemplates(): Promise<TalismanTemplate[]> {
   try {
     // In development, use absolute path from public folder
     // In production (static export), use relative path
-    const path = process.env.NODE_ENV === 'development' 
-      ? '/talisman-templates.json' 
+    const path = process.env.NODE_ENV === 'development'
+      ? '/talisman-templates.json'
       : './talisman-templates.json';
-    
+
     const response = await fetch(path);
     if (!response.ok) {
       throw new Error('Failed to load talisman templates');
     }
-    return await response.json();
+    const templates = await response.json();
+    
+    // Build reverse mappings after loading templates
+    buildReverseMappings(templates);
+    
+    return templates;
   } catch (error) {
     console.error('Error loading talisman templates:', error);
     return [];
   }
+}
+
+// Build reverse mappings from templates
+function buildReverseMappings(templates: TalismanTemplate[]) {
+  skillToSkillPtMap.clear();
+  templateIndex = {};
+
+
+  templates.forEach(template => {
+    // Get the three skillPt values and their corresponding skill lists
+    const skillPts = [template._SkillPt_01, template._SkillPt_02, template._SkillPt_03];
+    const skillLists = [template._SkillPt_01_SkillList, template._SkillPt_02_SkillList, template._SkillPt_03_SkillList];
+    
+    // Sort by precedence: 4,3,2,1 followed by 10,9,8,7,6,5,0
+    const precedence = [4, 3, 2, 1, 10, 9, 8, 7, 6, 5, 0];
+    const sortedIndices = [0, 1, 2].sort((a, b) => {
+      const aPrecedence = precedence.indexOf(skillPts[a]);
+      const bPrecedence = precedence.indexOf(skillPts[b]);
+      return aPrecedence - bPrecedence;
+    });
+    
+    // Build skill mappings in the correct order (skill 1, 2, 3 based on precedence)
+    sortedIndices.forEach((originalIndex, displayOrder) => {
+      const skillList = skillLists[originalIndex];
+      const skillPt = skillPts[originalIndex];
+      
+      skillList?.forEach(skill => {
+        if (!skill || skill === "无") return; // Skip empty skills
+        
+        const skillKey = skill.toLowerCase();
+        // Map skill to its skillPt value(s) - allow multiple skillPts per skill
+        if (!skillToSkillPtMap.has(skillKey)) {
+          skillToSkillPtMap.set(skillKey, []);
+        }
+        const existingSkillPts = skillToSkillPtMap.get(skillKey)!;
+        if (!existingSkillPts.includes(skillPt)) {
+          existingSkillPts.push(skillPt);
+        }
+      });
+    });
+
+    // Build template index for rarity lookup using the original order
+    const key = `${template._SkillPt_01}_${template._SkillPt_02}_${template._SkillPt_03}_${template._SlotPt}`;
+    templateIndex[key] = template._Rare;
+  });
+
+  // Debug: Print entire skill mapping
+  console.log('=== ENTIRE SKILL MAPPING ===');
+  for (const [skillKey, skillPts] of skillToSkillPtMap.entries()) {
+    console.log(`"${skillKey}": [${skillPts.join(', ')}]`);
+  }
+  console.log('=== END SKILL MAPPING ===');
+
 }
 
 // Get all unique skills from templates
@@ -173,6 +240,53 @@ export function talismanToCSV(talisman: UserTalisman): string {
   ].join(',');
 }
 
+// Infer rarity from skill and slot data
+function inferRarity(skill1: string, skill2: string, skill3: string, slotPt: number): string {
+  // Handle empty skills ("无" or empty strings)
+  const skills = [skill1, skill2, skill3].filter(skill => skill && skill !== "无");
+
+  if (skills.length === 0) {
+    return 'unknown'; // Mark empty talismans as unknown
+  }
+
+  // Find skill points for each skill - now can be multiple values per skill
+  const skillPtArrays: number[][] = [[0], [0], [0]]; // Default skill points
+  
+  skills.forEach((skill, index) => {
+    const skillKey = skill.toLowerCase();
+    const skillPts = skillToSkillPtMap.get(skillKey);
+    
+    if (skillPts && skillPts.length > 0) {
+      skillPtArrays[index] = skillPts;
+    }
+  });
+
+  // Try all combinations of skillPt values
+  for (const skillPt1 of skillPtArrays[0]) {
+    for (const skillPt2 of skillPtArrays[1]) {
+      for (const skillPt3 of skillPtArrays[2]) {
+        // Sort skillPts by precedence: 4,3,2,1 followed by 10,9,8,7,6,5,0
+        const precedence = [4, 3, 2, 1, 10, 9, 8, 7, 6, 5, 0];
+        const skillPts = [skillPt1, skillPt2, skillPt3].sort((a, b) => {
+          const aPrecedence = precedence.indexOf(a);
+          const bPrecedence = precedence.indexOf(b);
+          return aPrecedence - bPrecedence;
+        });
+
+        // Look up rarity using the template index with sorted skillPts
+        const key = `${skillPts[0]}_${skillPts[1]}_${skillPts[2]}_${slotPt}`;
+        const rarity = templateIndex[key];
+        
+        if (rarity) {
+          return rarity; // Return first match found
+        }
+      }
+    }
+  }
+
+  return 'unknown'; // Mark as unknown if no match found
+}
+
 // Parse CSV row to UserTalisman (convert from external format to internal format)
 export function csvToTalisman(row: string, index: number): UserTalisman {
   const fields = row.split(',').map(field =>
@@ -206,12 +320,20 @@ export function csvToTalisman(row: string, index: number): UserTalisman {
 
   const slotDescription = SLOT_MAPPINGS.find(m => m.slotPt === parseInt(slotPt))?.description || '防具1级孔x1';
 
+  // Construct skill strings
+  const skill1 = skill1Name && skill1Level > 0 && skill1Name !== "无" ? `${skill1Name}Lv${skill1Level}` : '';
+  const skill2 = skill2Name && skill2Level > 0 && skill2Name !== "无" ? `${skill2Name}Lv${skill2Level}` : '';
+  const skill3 = skill3Name && skill3Level > 0 && skill3Name !== "无" ? `${skill3Name}Lv${skill3Level}` : '';
+
+  // Infer rarity from skill and slot data
+  const rarity = inferRarity(skill1, skill2, skill3, parseInt(slotPt));
+
   return {
     id: generateTalismanId(),
-    rarity: '稀有度5', // Default rarity since it's not in CSV
-    skill1: skill1Name && skill1Level > 0 ? `${skill1Name}Lv${skill1Level}` : '',
-    skill2: skill2Name && skill2Level > 0 ? `${skill2Name}Lv${skill2Level}` : '',
-    skill3: skill3Name && skill3Level > 0 ? `${skill3Name}Lv${skill3Level}` : '',
+    rarity,
+    skill1,
+    skill2,
+    skill3,
     slotDescription,
     slotPt: parseInt(slotPt)
   };

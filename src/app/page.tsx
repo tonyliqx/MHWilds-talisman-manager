@@ -74,17 +74,23 @@ export default function Home() {
   return (
     <div className="space-y-8">
       {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
         <div className="mh-card p-4 text-center rounded-lg">
           <div className="text-2xl font-bold text-amber-800">{talismans.length}</div>
           <div className="text-sm text-gray-700">Total Talismans</div>
         </div>
-        <div className="mh-card p-4 text-center rounded-lg">
-          <div className="text-2xl font-bold text-amber-800">
-            {talismans.filter(t => t.rarity === '稀有度8').length}
-          </div>
-          <div className="text-sm text-gray-700">Rarity 8</div>
-        </div>
+                <div className="mh-card p-4 text-center rounded-lg">
+                  <div className="text-2xl font-bold text-amber-800">
+                    {talismans.filter(t => t.rarity === '稀有度8').length}
+                  </div>
+                  <div className="text-sm text-gray-700">Rarity 8</div>
+                </div>
+                <div className="mh-card p-4 text-center rounded-lg">
+                  <div className="text-2xl font-bold text-red-800">
+                    {talismans.filter(t => t.rarity === 'unknown').length}
+                  </div>
+                  <div className="text-sm text-gray-700">Unknown</div>
+                </div>
         <div className="mh-card p-4 text-center rounded-lg">
           <div className="text-2xl font-bold text-amber-800">
             {talismans.filter(t => t.skill1 || t.skill2 || t.skill3).length}

@@ -53,25 +53,27 @@ export const SLOT_MAPPINGS: SlotMapping[] = [
 // This is only used for CSV export/import, not for the internal app structure
 export const SLOT_DETAILED_MAPPINGS: Record<number, [number, number, number, number, number, number]> = {
   1: [1, 0, 0, 0, 0, 0],   // 防具1级孔x1
-  2: [2, 0, 0, 0, 0, 0],   // 防具1级孔x2
-  4: [0, 1, 0, 0, 0, 0],   // 防具2级孔x1
-  5: [1, 1, 0, 0, 0, 0],   // 防具2级孔x1,防具1级孔x1
-  6: [0, 0, 1, 0, 0, 0],   // 防具3级孔x1
+  2: [1, 1, 0, 0, 0, 0],   // 防具1级孔x2
+  4: [2, 0, 0, 0, 0, 0],   // 防具2级孔x1
+  5: [2, 1, 0, 0, 0, 0],   // 防具2级孔x1,防具1级孔x1
+  6: [3, 0, 0, 0, 0, 0],   // 防具3级孔x1
   11: [0, 0, 0, 1, 0, 0],  // 武器1级孔x1
   12: [1, 0, 0, 1, 0, 0],  // 武器1级孔x1,防具1级孔x1
-  13: [2, 0, 0, 1, 0, 0],  // 武器1级孔x1,防具1级孔x2
+  13: [1, 1, 0, 1, 0, 0],  // 武器1级孔x1,防具1级孔x2
 };
 
 export const RARITY_OPTIONS = [
   "稀有度5",
-  "稀有度6", 
+  "稀有度6",
   "稀有度7",
-  "稀有度8"
+  "稀有度8",
+  "unknown"
 ];
 
 export const RARITY_LABELS = {
   "稀有度5": "5",
-  "稀有度6": "6", 
+  "稀有度6": "6",
   "稀有度7": "7",
-  "稀有度8": "8"
+  "稀有度8": "8",
+  "unknown": "?"
 };
