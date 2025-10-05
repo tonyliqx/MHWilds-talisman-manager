@@ -3,7 +3,7 @@ import { TalismanTemplate, UserTalisman, SLOT_MAPPINGS } from '@/types/talisman'
 // Load talisman templates from JSON
 export async function loadTalismanTemplates(): Promise<TalismanTemplate[]> {
   try {
-    const response = await fetch('/api/talisman-templates');
+    const response = await fetch('/talisman-templates.json');
     if (!response.ok) {
       throw new Error('Failed to load talisman templates');
     }

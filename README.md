@@ -28,6 +28,8 @@ A Next.js web application for managing Monster Hunter Wilds talismans. This tool
 
 ## Installation & Setup
 
+### Local Development
+
 1. **Clone the repository**:
    ```bash
    git clone <repository-url>
@@ -45,6 +47,15 @@ A Next.js web application for managing Monster Hunter Wilds talismans. This tool
    ```
 
 4. **Open your browser** and navigate to `http://localhost:3000`
+
+### GitHub Pages Deployment
+
+This app is configured for automatic deployment to GitHub Pages. See [DEPLOYMENT.md](./DEPLOYMENT.md) for detailed setup instructions.
+
+**Quick Deploy:**
+1. Push code to GitHub repository
+2. Enable GitHub Pages with "GitHub Actions" source
+3. Site will be available at `https://[username].github.io/[repository-name]`
 
 ## Usage
 
