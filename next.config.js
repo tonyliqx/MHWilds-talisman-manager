@@ -12,6 +12,21 @@ const nextConfig = {
   images: {
     unoptimized: true
   },
+          // Development optimizations
+          ...(isDev && {
+            webpack: (config, { dev }) => {
+              if (dev) {
+                // Disable webpack cache in development to prevent stale issues
+                config.cache = false;
+                // Optimize for faster rebuilds
+                config.watchOptions = {
+                  poll: 1000,
+                  aggregateTimeout: 300,
+                };
+              }
+              return config;
+            },
+          }),
 }
 
 module.exports = nextConfig

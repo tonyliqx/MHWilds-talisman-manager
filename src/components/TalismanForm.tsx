@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { UserTalisman, TalismanTemplate, SLOT_MAPPINGS, RARITY_OPTIONS, RARITY_LABELS } from '@/types/talisman';
-import { loadTalismanTemplates, getAllSkills, getSkillsForSlot, generateTalismanId } from '@/lib/talisman-utils';
+import { loadTalismanTemplates, getAvailableSlots, getAvailableSkills1, getAvailableSkills2, getAvailableSkills3, generateTalismanId } from '@/lib/talisman-utils';
 
 interface TalismanFormProps {
   onSubmit: (talisman: UserTalisman) => void;
@@ -10,9 +10,100 @@ interface TalismanFormProps {
   onCancel?: () => void;
 }
 
+interface SkillAutocompleteProps {
+  label: string;
+  value: string;
+  availableSkills: string[];
+  onChange: (value: string) => void;
+}
+
+function SkillAutocomplete({ label, value, availableSkills, onChange }: SkillAutocompleteProps) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [inputValue, setInputValue] = useState(value);
+  const [filteredSkills, setFilteredSkills] = useState<string[]>([]);
+
+  // Update input value when prop value changes
+  useEffect(() => {
+    setInputValue(value);
+  }, [value]);
+
+  // Filter skills based on input
+  useEffect(() => {
+    if (inputValue.trim() === '') {
+      setFilteredSkills(availableSkills);
+    } else {
+      const filtered = availableSkills.filter(skill =>
+        skill.toLowerCase().includes(inputValue.toLowerCase())
+      );
+      setFilteredSkills(filtered);
+    }
+  }, [inputValue, availableSkills]);
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newValue = e.target.value;
+    setInputValue(newValue);
+    setIsOpen(true);
+    onChange(newValue);
+  };
+
+  const handleSkillSelect = (skill: string) => {
+    setInputValue(skill);
+    setIsOpen(false);
+    onChange(skill);
+  };
+
+  const handleInputFocus = () => {
+    setIsOpen(true);
+  };
+
+  const handleInputBlur = () => {
+    // Delay closing to allow for click on dropdown item
+    setTimeout(() => setIsOpen(false), 150);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Escape') {
+      setIsOpen(false);
+    }
+  };
+
+  return (
+    <div className="skill-autocomplete-container">
+      <label className="block text-sm font-medium text-gray-700 mb-2">
+        {label}
+      </label>
+      <div className="relative">
+        <input
+          type="text"
+          value={inputValue}
+          onChange={handleInputChange}
+          onFocus={handleInputFocus}
+          onBlur={handleInputBlur}
+          onKeyDown={handleKeyDown}
+          placeholder="Type to search skills..."
+          className="mh-autocomplete-input w-full"
+        />
+        {isOpen && filteredSkills.length > 0 && (
+          <div className="absolute z-[9999] w-full mt-1 mh-autocomplete-dropdown max-h-60 overflow-y-auto">
+            {filteredSkills.map((skill) => (
+              <button
+                key={skill}
+                type="button"
+                onClick={() => handleSkillSelect(skill)}
+                className="w-full px-3 py-2 text-left mh-autocomplete-item text-sm"
+              >
+                {skill}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function TalismanForm({ onSubmit, editingTalisman, onCancel }: TalismanFormProps) {
   const [templates, setTemplates] = useState<TalismanTemplate[]>([]);
-  const [allSkills, setAllSkills] = useState<string[]>([]);
   const [formData, setFormData] = useState<Partial<UserTalisman>>({
     rarity: '稀有度5',
     skill1: '',
@@ -25,7 +116,6 @@ export default function TalismanForm({ onSubmit, editingTalisman, onCancel }: Ta
   useEffect(() => {
     loadTalismanTemplates().then(data => {
       setTemplates(data);
-      setAllSkills(getAllSkills(data));
     });
   }, []);
 
@@ -44,12 +134,61 @@ export default function TalismanForm({ onSubmit, editingTalisman, onCancel }: Ta
     }
   }, [editingTalisman]);
 
+  // Auto-update slot when rarity changes and current slot is no longer valid
+  useEffect(() => {
+    if (templates.length > 0) {
+      const availableSlots = getAvailableSlots(templates, formData.rarity, []);
+      const currentSlotIsValid = availableSlots.some(slot => slot.slotPt === formData.slotPt);
+      
+      if (!currentSlotIsValid && availableSlots.length > 0) {
+        // Current slot is invalid, switch to first available slot and clear skills
+        const newSlot = availableSlots[0];
+        setFormData(prev => ({
+          ...prev,
+          slotPt: newSlot.slotPt,
+          slotDescription: newSlot.description,
+          skill1: '',
+          skill2: '',
+          skill3: ''
+        }));
+      }
+    }
+  }, [formData.rarity, templates]);
+
+  // Get available options based on current selections
+  const availableSlots = getAvailableSlots(templates, formData.rarity, []);
+  
+  // Get available skills for each slot with cross-filtering
+  // Each slot gets skills available when OTHER slots are considered
+  const availableSkills1 = getAvailableSkills1(
+    templates, 
+    formData.rarity, 
+    formData.slotPt, 
+    [formData.skill2, formData.skill3].filter(Boolean) as string[]
+  );
+  const availableSkills2 = getAvailableSkills2(
+    templates, 
+    formData.rarity, 
+    formData.slotPt, 
+    [formData.skill1, formData.skill3].filter(Boolean) as string[]
+  );
+  const availableSkills3 = getAvailableSkills3(
+    templates, 
+    formData.rarity, 
+    formData.slotPt, 
+    [formData.skill1, formData.skill2].filter(Boolean) as string[]
+  );
+
   const handleSlotChange = (slotPt: number) => {
     const mapping = SLOT_MAPPINGS.find(m => m.slotPt === slotPt);
     setFormData(prev => ({
       ...prev,
       slotPt,
-      slotDescription: mapping?.description || ''
+      slotDescription: mapping?.description || '',
+      // Clear skills when slot changes as they might not be valid for new slot
+      skill1: '',
+      skill2: '',
+      skill3: ''
     }));
   };
 
@@ -81,7 +220,7 @@ export default function TalismanForm({ onSubmit, editingTalisman, onCancel }: Ta
   };
 
   return (
-    <div className="mh-card p-6 rounded-lg">
+    <div className="mh-card p-6 rounded-lg relative z-20">
       <h2 className="text-2xl font-bold text-gray-800 mb-6">
         {editingTalisman ? 'Edit Talisman' : 'Add New Talisman'}
       </h2>
@@ -118,7 +257,7 @@ export default function TalismanForm({ onSubmit, editingTalisman, onCancel }: Ta
             onChange={(e) => handleSlotChange(parseInt(e.target.value))}
             className="mh-select w-full"
           >
-            {SLOT_MAPPINGS.map(mapping => (
+            {availableSlots.map(mapping => (
               <option key={mapping.slotPt} value={mapping.slotPt}>
                 {mapping.description}
               </option>
@@ -127,26 +266,26 @@ export default function TalismanForm({ onSubmit, editingTalisman, onCancel }: Ta
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {[1, 2, 3].map(slotNum => (
-            <div key={slotNum}>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Skill {slotNum}
-              </label>
-              <select
-                value={formData[`skill${slotNum}` as keyof typeof formData] as string || ''}
-                onChange={(e) => setFormData(prev => ({ 
-                  ...prev, 
-                  [`skill${slotNum}`]: e.target.value 
-                }))}
-                className="mh-select w-full"
-              >
-                <option value="">No skill</option>
-                {allSkills.map(skill => (
-                  <option key={skill} value={skill}>{skill}</option>
-                ))}
-              </select>
-            </div>
-          ))}
+          <SkillAutocomplete
+            label="Skill 1"
+            value={formData.skill1 || ''}
+            availableSkills={availableSkills1}
+            onChange={(value) => setFormData(prev => ({ ...prev, skill1: value }))}
+          />
+          
+          <SkillAutocomplete
+            label="Skill 2"
+            value={formData.skill2 || ''}
+            availableSkills={availableSkills2}
+            onChange={(value) => setFormData(prev => ({ ...prev, skill2: value }))}
+          />
+          
+          <SkillAutocomplete
+            label="Skill 3"
+            value={formData.skill3 || ''}
+            availableSkills={availableSkills3}
+            onChange={(value) => setFormData(prev => ({ ...prev, skill3: value }))}
+          />
         </div>
 
 

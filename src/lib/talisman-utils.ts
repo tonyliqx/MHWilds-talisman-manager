@@ -33,6 +33,86 @@ export function getAllSkills(templates: TalismanTemplate[]): string[] {
   return Array.from(skillSet).sort();
 }
 
+// Get filtered templates based on current selections
+export function getFilteredTemplates(
+  templates: TalismanTemplate[],
+  rarity?: string,
+  slotPt?: number,
+  selectedSkills: string[] = []
+): TalismanTemplate[] {
+  return templates.filter(template => {
+    // Filter by rarity
+    if (rarity && template._Rare !== rarity) {
+      return false;
+    }
+
+    // Filter by slot
+    if (slotPt && template._SlotPt !== slotPt) {
+      return false;
+    }
+
+    // Filter by skills - all selected skills must be available in this template
+    // (at least one skill slot must contain each selected skill)
+    for (const skill of selectedSkills) {
+      if (skill && !template._SkillPt_01_SkillList.includes(skill) &&
+          !template._SkillPt_02_SkillList.includes(skill) &&
+          !template._SkillPt_03_SkillList.includes(skill)) {
+        return false;
+      }
+    }
+
+    return true;
+  });
+}
+
+// Get available skills based on current filter
+export function getAvailableSkills(
+  templates: TalismanTemplate[],
+  rarity?: string,
+  slotPt?: number,
+  selectedSkills: string[] = [],
+  excludeSkills: string[] = []
+): string[] {
+  const filteredTemplates = getFilteredTemplates(templates, rarity, slotPt, selectedSkills);
+  const skillSet = new Set<string>();
+  
+  // Create union of all skills from all skill lists in remaining templates
+  filteredTemplates.forEach(template => {
+    // Add all skills from SkillPt_01_SkillList
+    template._SkillPt_01_SkillList?.forEach(skill => {
+      if (!excludeSkills.includes(skill)) skillSet.add(skill);
+    });
+    
+    // Add all skills from SkillPt_02_SkillList
+    template._SkillPt_02_SkillList?.forEach(skill => {
+      if (!excludeSkills.includes(skill)) skillSet.add(skill);
+    });
+    
+    // Add all skills from SkillPt_03_SkillList
+    template._SkillPt_03_SkillList?.forEach(skill => {
+      if (!excludeSkills.includes(skill)) skillSet.add(skill);
+    });
+  });
+  
+  return Array.from(skillSet).sort();
+}
+
+// Get available slot options based on current filter
+export function getAvailableSlots(
+  templates: TalismanTemplate[],
+  rarity?: string,
+  selectedSkills: string[] = []
+): Array<{slotPt: number, description: string}> {
+  const filteredTemplates = getFilteredTemplates(templates, rarity, undefined, selectedSkills);
+  const slotSet = new Set<number>();
+  
+  filteredTemplates.forEach(template => {
+    slotSet.add(template._SlotPt);
+  });
+  
+  return SLOT_MAPPINGS.filter(mapping => slotSet.has(mapping.slotPt));
+}
+
 // Get skills for a specific slot point
 export function getSkillsForSlot(templates: TalismanTemplate[], slotPt: number): string[] {
   const skillSet = new Set<string>();
@@ -95,6 +175,60 @@ export function csvToTalisman(row: string, index: number): UserTalisman {
     slotDescription: fields[4] || '',
     slotPt: slotPt
   };
+}
+
+// Get available skills for skill slot 1 with cross-filtering
+export function getAvailableSkills1(
+  templates: TalismanTemplate[],
+  rarity?: string,
+  slotPt?: number,
+  selectedSkills: string[] = []
+): string[] {
+  // First filter templates by rarity, slot, and existing selected skills
+  const filteredTemplates = getFilteredTemplates(templates, rarity, slotPt, selectedSkills);
+  const skillSet = new Set<string>();
+
+  filteredTemplates.forEach(template => {
+    template._SkillPt_01_SkillList?.forEach(skill => skillSet.add(skill));
+  });
+
+  return Array.from(skillSet).sort();
+}
+
+// Get available skills for skill slot 2 with cross-filtering
+export function getAvailableSkills2(
+  templates: TalismanTemplate[],
+  rarity?: string,
+  slotPt?: number,
+  selectedSkills: string[] = []
+): string[] {
+  // First filter templates by rarity, slot, and existing selected skills
+  const filteredTemplates = getFilteredTemplates(templates, rarity, slotPt, selectedSkills);
+  const skillSet = new Set<string>();
+
+  filteredTemplates.forEach(template => {
+    template._SkillPt_02_SkillList?.forEach(skill => skillSet.add(skill));
+  });
+
+  return Array.from(skillSet).sort();
+}
+
+// Get available skills for skill slot 3 with cross-filtering
+export function getAvailableSkills3(
+  templates: TalismanTemplate[],
+  rarity?: string,
+  slotPt?: number,
+  selectedSkills: string[] = []
+): string[] {
+  // First filter templates by rarity, slot, and existing selected skills
+  const filteredTemplates = getFilteredTemplates(templates, rarity, slotPt, selectedSkills);
+  const skillSet = new Set<string>();
+
+  filteredTemplates.forEach(template => {
+    template._SkillPt_03_SkillList?.forEach(skill => skillSet.add(skill));
+  });
+
+  return Array.from(skillSet).sort();
 }
 
 // CSV header
