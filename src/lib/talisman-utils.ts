@@ -34,29 +34,68 @@ export async function loadTalismanTemplates(): Promise<TalismanTemplate[]> {
   }
 }
 
+// Generate valid permutations of skillPts based on game rules:
+// - SkillPt 1,2,3,4 (low group) always appear before SkillPt 5,6,7,8,9,10 (high group)
+// - SkillPt 0 (empty) always appears at the end
+// - Within each group, order can vary
+function generateValidPermutations(skillPts: number[]): number[][] {
+  const lowGroup: number[] = [];
+  const highGroup: number[] = [];
+  const zeroGroup: number[] = [];
+  
+  // Separate into low, high, and zero groups
+  skillPts.forEach(pt => {
+    if (pt === 0) {
+      zeroGroup.push(pt);
+    } else if (pt >= 1 && pt <= 4) {
+      lowGroup.push(pt);
+    } else if (pt >= 5 && pt <= 10) {
+      highGroup.push(pt);
+    }
+  });
+  
+  // Generate all permutations of an array
+  function permute(arr: number[]): number[][] {
+    if (arr.length <= 1) return [arr];
+    const result: number[][] = [];
+    for (let i = 0; i < arr.length; i++) {
+      const current = arr[i];
+      const remaining = [...arr.slice(0, i), ...arr.slice(i + 1)];
+      const remainingPerms = permute(remaining);
+      remainingPerms.forEach(perm => {
+        result.push([current, ...perm]);
+      });
+    }
+    return result;
+  }
+  
+  const lowPerms = permute(lowGroup);
+  const highPerms = permute(highGroup);
+  
+  // Combine: each low permutation followed by each high permutation, followed by zeros
+  const validPermutations: number[][] = [];
+  for (const lowPerm of lowPerms) {
+    for (const highPerm of highPerms) {
+      validPermutations.push([...lowPerm, ...highPerm, ...zeroGroup]);
+    }
+  }
+  
+  return validPermutations;
+}
+
 // Build reverse mappings from templates
 function buildReverseMappings(templates: TalismanTemplate[]) {
   skillToSkillPtMap.clear();
   templateIndex = {};
-
 
   templates.forEach(template => {
     // Get the three skillPt values and their corresponding skill lists
     const skillPts = [template._SkillPt_01, template._SkillPt_02, template._SkillPt_03];
     const skillLists = [template._SkillPt_01_SkillList, template._SkillPt_02_SkillList, template._SkillPt_03_SkillList];
     
-    // Sort by precedence: 4,3,2,1 followed by 10,9,8,7,6,5,0
-    const precedence = [4, 3, 2, 1, 10, 9, 8, 7, 6, 5, 0];
-    const sortedIndices = [0, 1, 2].sort((a, b) => {
-      const aPrecedence = precedence.indexOf(skillPts[a]);
-      const bPrecedence = precedence.indexOf(skillPts[b]);
-      return aPrecedence - bPrecedence;
-    });
-    
-    // Build skill mappings in the correct order (skill 1, 2, 3 based on precedence)
-    sortedIndices.forEach((originalIndex, displayOrder) => {
-      const skillList = skillLists[originalIndex];
-      const skillPt = skillPts[originalIndex];
+    // Build skill mappings
+    skillLists.forEach((skillList, index) => {
+      const skillPt = skillPts[index];
       
       skillList?.forEach(skill => {
         if (!skill || skill === "无") return; // Skip empty skills
@@ -73,20 +112,13 @@ function buildReverseMappings(templates: TalismanTemplate[]) {
       });
     });
 
-    // Build template index for rarity lookup using the original order
-    const key = `${template._SkillPt_01}_${template._SkillPt_02}_${template._SkillPt_03}_${template._SlotPt}`;
-    templateIndex[key] = template._Rare;
-  });
-
-  // Debug: Print entire skill mapping (only in development)
-  if (process.env.NODE_ENV === 'development') {
-    console.log('=== ENTIRE SKILL MAPPING ===');
-    skillToSkillPtMap.forEach((skillPts, skillKey) => {
-      console.log(`"${skillKey}": [${skillPts.join(', ')}]`);
+    // Build template index for rarity lookup - add ALL valid permutations
+    const validPermutations = generateValidPermutations(skillPts);
+    validPermutations.forEach(permutation => {
+      const key = `${permutation[0]}_${permutation[1]}_${permutation[2]}_${template._SlotPt}`;
+      templateIndex[key] = template._Rare;
     });
-    console.log('=== END SKILL MAPPING ===');
-  }
-
+  });
 }
 
 // Get all unique skills from templates
@@ -267,16 +299,8 @@ function inferRarity(skill1: string, skill2: string, skill3: string, slotPt: num
   for (const skillPt1 of skillPtArrays[0]) {
     for (const skillPt2 of skillPtArrays[1]) {
       for (const skillPt3 of skillPtArrays[2]) {
-        // Sort skillPts by precedence: 4,3,2,1 followed by 10,9,8,7,6,5,0
-        const precedence = [4, 3, 2, 1, 10, 9, 8, 7, 6, 5, 0];
-        const skillPts = [skillPt1, skillPt2, skillPt3].sort((a, b) => {
-          const aPrecedence = precedence.indexOf(a);
-          const bPrecedence = precedence.indexOf(b);
-          return aPrecedence - bPrecedence;
-        });
-
-        // Look up rarity using the template index with sorted skillPts
-        const key = `${skillPts[0]}_${skillPts[1]}_${skillPts[2]}_${slotPt}`;
+        // Use the skillPt values in their original order (no sorting)
+        const key = `${skillPt1}_${skillPt2}_${skillPt3}_${slotPt}`;
         const rarity = templateIndex[key];
         
         if (rarity) {
@@ -341,6 +365,43 @@ export function csvToTalisman(row: string, index: number): UserTalisman {
   };
 }
 
+// Helper: Get skills that can appear in a specific display position for a template
+function getSkillsForDisplayPosition(
+  template: TalismanTemplate,
+  displayPosition: number // 0, 1, or 2 for first, second, third display position
+): Set<string> {
+  const skillPts = [template._SkillPt_01, template._SkillPt_02, template._SkillPt_03];
+  const skillLists = [
+    template._SkillPt_01_SkillList,
+    template._SkillPt_02_SkillList,
+    template._SkillPt_03_SkillList
+  ];
+  
+  // Get all valid display orders for this template's skillPts
+  const validPermutations = generateValidPermutations(skillPts);
+  
+  const skillsAtPosition = new Set<string>();
+  
+  // For each valid permutation, find which template slot appears at the display position
+  validPermutations.forEach(permutation => {
+    // Find which original template slot (0, 1, or 2) has this skillPt value at this display position
+    const skillPtAtPosition = permutation[displayPosition];
+    
+    // Add skills from ALL slots that have this skillPt (handles duplicates)
+    skillPts.forEach((pt, slotIndex) => {
+      if (pt === skillPtAtPosition) {
+        skillLists[slotIndex]?.forEach(skill => {
+          if (skill && skill !== "无") {
+            skillsAtPosition.add(skill);
+          }
+        });
+      }
+    });
+  });
+  
+  return skillsAtPosition;
+}
+
 // Get available skills for skill slot 1 with cross-filtering
 export function getAvailableSkills1(
   templates: TalismanTemplate[],
@@ -353,7 +414,8 @@ export function getAvailableSkills1(
   const skillSet = new Set<string>();
 
   filteredTemplates.forEach(template => {
-    template._SkillPt_01_SkillList?.forEach(skill => skillSet.add(skill));
+    const skillsAtPosition = getSkillsForDisplayPosition(template, 0);
+    skillsAtPosition.forEach(skill => skillSet.add(skill));
   });
 
   return Array.from(skillSet).sort();
@@ -371,7 +433,8 @@ export function getAvailableSkills2(
   const skillSet = new Set<string>();
 
   filteredTemplates.forEach(template => {
-    template._SkillPt_02_SkillList?.forEach(skill => skillSet.add(skill));
+    const skillsAtPosition = getSkillsForDisplayPosition(template, 1);
+    skillsAtPosition.forEach(skill => skillSet.add(skill));
   });
 
   return Array.from(skillSet).sort();
@@ -389,7 +452,8 @@ export function getAvailableSkills3(
   const skillSet = new Set<string>();
 
   filteredTemplates.forEach(template => {
-    template._SkillPt_03_SkillList?.forEach(skill => skillSet.add(skill));
+    const skillsAtPosition = getSkillsForDisplayPosition(template, 2);
+    skillsAtPosition.forEach(skill => skillSet.add(skill));
   });
 
   return Array.from(skillSet).sort();
