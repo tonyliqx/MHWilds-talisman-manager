@@ -15,12 +15,14 @@ interface SkillAutocompleteProps {
   value: string;
   availableSkills: string[];
   onChange: (value: string) => void;
+  fieldId: string; // Unique identifier for this field
 }
 
-function SkillAutocomplete({ label, value, availableSkills, onChange }: SkillAutocompleteProps) {
+function SkillAutocomplete({ label, value, availableSkills, onChange, fieldId }: SkillAutocompleteProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [inputValue, setInputValue] = useState(value);
   const [filteredSkills, setFilteredSkills] = useState<string[]>([]);
+  const [highlightedIndex, setHighlightedIndex] = useState(-1);
 
   // Update input value when prop value changes
   useEffect(() => {
@@ -37,7 +39,16 @@ function SkillAutocomplete({ label, value, availableSkills, onChange }: SkillAut
       );
       setFilteredSkills(filtered);
     }
+    setHighlightedIndex(-1); // Reset highlight when filter changes
   }, [inputValue, availableSkills]);
+
+  // Scroll highlighted item into view
+  useEffect(() => {
+    if (highlightedIndex >= 0) {
+      const element = document.getElementById(`${fieldId}-option-${highlightedIndex}`);
+      element?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    }
+  }, [highlightedIndex, fieldId]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newValue = e.target.value;
@@ -49,6 +60,7 @@ function SkillAutocomplete({ label, value, availableSkills, onChange }: SkillAut
   const handleSkillSelect = (skill: string) => {
     setInputValue(skill);
     setIsOpen(false);
+    setHighlightedIndex(-1);
     onChange(skill);
   };
 
@@ -58,12 +70,56 @@ function SkillAutocomplete({ label, value, availableSkills, onChange }: SkillAut
 
   const handleInputBlur = () => {
     // Delay closing to allow for click on dropdown item
-    setTimeout(() => setIsOpen(false), 150);
+    setTimeout(() => {
+      setIsOpen(false);
+      setHighlightedIndex(-1);
+    }, 150);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Escape') {
-      setIsOpen(false);
+    if (!isOpen) {
+      if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+        e.preventDefault();
+        setIsOpen(true);
+        setHighlightedIndex(0);
+      }
+      return;
+    }
+
+    switch (e.key) {
+      case 'Escape':
+        e.preventDefault();
+        setIsOpen(false);
+        setHighlightedIndex(-1);
+        break;
+
+      case 'ArrowDown':
+        e.preventDefault();
+        setHighlightedIndex(prev => 
+          prev < filteredSkills.length - 1 ? prev + 1 : prev
+        );
+        break;
+
+      case 'ArrowUp':
+        e.preventDefault();
+        setHighlightedIndex(prev => (prev > 0 ? prev - 1 : 0));
+        break;
+
+      case 'Enter':
+        e.preventDefault();
+        if (highlightedIndex >= 0 && highlightedIndex < filteredSkills.length) {
+          handleSkillSelect(filteredSkills[highlightedIndex]);
+        } else if (filteredSkills.length === 1) {
+          // If there's only one option, select it
+          handleSkillSelect(filteredSkills[0]);
+        }
+        break;
+
+      case 'Tab':
+        // Allow tab to close dropdown and move to next field naturally
+        setIsOpen(false);
+        setHighlightedIndex(-1);
+        break;
     }
   };
 
@@ -84,13 +140,19 @@ function SkillAutocomplete({ label, value, availableSkills, onChange }: SkillAut
           className="mh-autocomplete-input w-full"
         />
         {isOpen && filteredSkills.length > 0 && (
-          <div className="absolute z-[9999] w-full mt-1 mh-autocomplete-dropdown max-h-60 overflow-y-auto">
-            {filteredSkills.map((skill) => (
+          <div className="absolute z-[9999] w-full mt-1 mh-autocomplete-dropdown max-h-60 overflow-y-auto p-2 space-y-1">
+            {filteredSkills.map((skill, index) => (
               <button
                 key={skill}
+                id={`${fieldId}-option-${index}`}
                 type="button"
                 onClick={() => handleSkillSelect(skill)}
-                className="w-full px-3 py-2 text-left mh-autocomplete-item text-sm"
+                onMouseEnter={() => setHighlightedIndex(index)}
+                className={`w-full px-4 py-2.5 text-left text-sm font-medium rounded-lg transition-all duration-150 ${
+                  index === highlightedIndex 
+                    ? 'bg-amber-600 text-white shadow-md transform scale-[1.02]' 
+                    : 'bg-amber-50 text-amber-900 hover:bg-amber-200'
+                }`}
               >
                 {skill}
               </button>
@@ -272,6 +334,7 @@ export default function TalismanForm({ onSubmit, editingTalisman, onCancel }: Ta
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <SkillAutocomplete
+            fieldId="skill1"
             label="Skill 1"
             value={formData.skill1 || ''}
             availableSkills={availableSkills1}
@@ -279,6 +342,7 @@ export default function TalismanForm({ onSubmit, editingTalisman, onCancel }: Ta
           />
 
           <SkillAutocomplete
+            fieldId="skill2"
             label="Skill 2"
             value={formData.skill2 || ''}
             availableSkills={availableSkills2}
@@ -286,6 +350,7 @@ export default function TalismanForm({ onSubmit, editingTalisman, onCancel }: Ta
           />
 
           <SkillAutocomplete
+            fieldId="skill3"
             label="Skill 3"
             value={formData.skill3 || ''}
             availableSkills={availableSkills3}
