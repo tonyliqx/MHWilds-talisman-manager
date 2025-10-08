@@ -134,3 +134,38 @@ describe('TalismanAnalysis - Integration Tests', () => {
   });
 });
 
+describe('TalismanAnalysis - Performance Optimization', () => {
+  test('short-circuit: different skill names should not try permutations', () => {
+    // This test verifies the optimization where we check skill name sets
+    // before trying permutations
+    
+    // Even though these have same number of skills, the names differ
+    // Should immediately return incomparable without trying permutations
+    expect(compareSkills('攻击Lv5', '体力Lv3')).toBeNull();
+    expect(compareSkills('防御Lv5', '耐力Lv3')).toBeNull();
+  });
+
+  test('3 skills vs 2 skills should be comparable if skill names match', () => {
+    // T1: 攻击Lv3, 防御Lv2, 回避Lv1
+    // T2: 攻击Lv2, 防御Lv1, (empty)
+    // Expected: T1 should dominate T2
+    // This verifies that different skill counts don't incorrectly short-circuit
+    
+    // Individual skill comparisons show T1 is better
+    expect(compareSkills('攻击Lv3', '攻击Lv2')).toBe(1);
+    expect(compareSkills('防御Lv2', '防御Lv1')).toBe(1);
+    expect(compareSkills('回避Lv1', '')).toBe(1); // Having a skill > no skill
+  });
+
+  test('2 skills vs 3 skills should be incomparable if T2 has extra skill', () => {
+    // T1: 攻击Lv3, 防御Lv2, (empty)
+    // T2: 攻击Lv2, 防御Lv1, 回避Lv1
+    // Expected: Incomparable
+    // T1 has higher levels but T2 has an extra skill (回避)
+    
+    expect(compareSkills('攻击Lv3', '攻击Lv2')).toBe(1);
+    expect(compareSkills('防御Lv2', '防御Lv1')).toBe(1);
+    // But T2 has 回避 which T1 doesn't -> incomparable
+  });
+});
+

@@ -107,99 +107,75 @@ function compareTalismans(t1: UserTalisman, t2: UserTalisman): { result: number 
   const skills1 = [t1.skill1, t1.skill2, t1.skill3].filter(s => s && s !== '无');
   const skills2 = [t2.skill1, t2.skill2, t2.skill3].filter(s => s && s !== '无');
   
-  // Try all permutations of skills to find the best matching
-  const perms2 = getPermutations(skills2);
+  // Parse skills into {name, level} objects
+  const parsedSkills1 = skills1.map(s => parseSkill(s)).filter((p): p is { name: string; level: number } => p !== null);
+  const parsedSkills2 = skills2.map(s => parseSkill(s)).filter((p): p is { name: string; level: number } => p !== null);
   
-  let bestMatch: { canDominate: boolean; isEqual: boolean; reason: string } | null = null;
+  // Create maps: skillName -> level
+  const skillMap1 = new Map<string, number>();
+  const skillMap2 = new Map<string, number>();
   
-  for (const perm2 of perms2) {
-    let canDominate = true;
-    let isEqual = true;
-    const comparisons: string[] = [];
-    
-    // Pad arrays to length 3
-    const padded1 = [...skills1];
-    while (padded1.length < 3) padded1.push('');
-    
-    const padded2 = [...perm2];
-    while (padded2.length < 3) padded2.push('');
-    
-    // Compare each skill position
-    for (let i = 0; i < 3; i++) {
-      const cmp = compareSkills(padded1[i], padded2[i]);
-      
-      if (cmp === null) {
-        // Incomparable skills
-        canDominate = false;
-        break;
-      }
-      
-      if (cmp < 0) {
-        // t1's skill is worse
-        canDominate = false;
-        break;
-      }
-      
-      if (cmp > 0) {
-        isEqual = false;
-        comparisons.push(`Skill${i + 1}: ${padded1[i] || '(none)'} > ${padded2[i] || '(none)'}`);
-      } else {
-        comparisons.push(`Skill${i + 1}: ${padded1[i] || '(none)'} = ${padded2[i] || '(none)'}`);
-      }
-    }
-    
-    if (canDominate) {
-      // Also check slots
-      const slotCmp = compareSlots(t1.slotPt, t2.slotPt);
-      
-      if (slotCmp === null) {
-        canDominate = false;
-      } else if (slotCmp < 0) {
-        canDominate = false;
-      } else {
-        if (slotCmp > 0) {
-          isEqual = false;
-          comparisons.push(`Slots: ${t1.slotDescription} > ${t2.slotDescription}`);
-        } else {
-          comparisons.push(`Slots: ${t1.slotDescription} = ${t2.slotDescription}`);
-        }
-        
-        bestMatch = {
-          canDominate: true,
-          isEqual,
-          reason: comparisons.join(', ')
-        };
-        break;
-      }
+  parsedSkills1.forEach(s => skillMap1.set(s.name, s.level));
+  parsedSkills2.forEach(s => skillMap2.set(s.name, s.level));
+  
+  // Short-circuit: If T2 has any skills that T1 doesn't have, they're incomparable
+  for (const [name] of Array.from(skillMap2.entries())) {
+    if (!skillMap1.has(name)) {
+      return { result: null }; // T2 has a skill T1 doesn't have -> incomparable
     }
   }
   
-  if (bestMatch) {
-    if (bestMatch.isEqual) {
-      return { result: 0, reason: 'Duplicate: ' + bestMatch.reason };
+  // Now we know: all of T2's skills exist in T1 (T1 might have extra skills)
+  // Compare each of T2's skills with T1's corresponding skills
+  let isEqual = true;
+  const comparisons: string[] = [];
+  
+  for (const [name, level2] of Array.from(skillMap2.entries())) {
+    const level1 = skillMap1.get(name)!; // We know it exists from the check above
+    
+    if (level1 > level2) {
+      isEqual = false;
+      comparisons.push(`${name}Lv${level1} > ${name}Lv${level2}`);
+    } else if (level1 < level2) {
+      // T1's skill level is lower than T2's -> T1 doesn't dominate
+      return { result: null };
     } else {
-      return { result: 1, reason: bestMatch.reason };
+      // Equal levels
+      comparisons.push(`${name}Lv${level1} = ${name}Lv${level2}`);
     }
   }
   
-  return { result: null };
-}
-
-function getPermutations<T>(arr: T[]): T[][] {
-  if (arr.length <= 1) return [arr];
-  
-  const result: T[][] = [];
-  for (let i = 0; i < arr.length; i++) {
-    const current = arr[i];
-    const remaining = [...arr.slice(0, i), ...arr.slice(i + 1)];
-    const remainingPerms = getPermutations(remaining);
-    
-    remainingPerms.forEach(perm => {
-      result.push([current, ...perm]);
+  // If T1 has more skills than T2, it's strictly better (not equal)
+  if (skillMap1.size > skillMap2.size) {
+    isEqual = false;
+    const extraSkills = Array.from(skillMap1.keys()).filter(name => !skillMap2.has(name));
+    extraSkills.forEach(name => {
+      const level = skillMap1.get(name)!;
+      comparisons.push(`${name}Lv${level} > (none)`);
     });
   }
   
-  return result;
+  // Check slots
+  const slotCmp = compareSlots(t1.slotPt, t2.slotPt);
+  
+  if (slotCmp === null || slotCmp < 0) {
+    // Slots incomparable or worse
+    return { result: null };
+  }
+  
+  if (slotCmp > 0) {
+    isEqual = false;
+    comparisons.push(`Slots: ${t1.slotDescription} > ${t2.slotDescription}`);
+  } else {
+    comparisons.push(`Slots: ${t1.slotDescription} = ${t2.slotDescription}`);
+  }
+  
+  // T1 dominates or equals T2
+  if (isEqual) {
+    return { result: 0, reason: 'Duplicate: ' + comparisons.join(', ') };
+  } else {
+    return { result: 1, reason: comparisons.join(', ') };
+  }
 }
 
 export default function TalismanAnalysis({ talismans }: TalismanAnalysisProps) {
