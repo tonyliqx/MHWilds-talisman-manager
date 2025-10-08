@@ -6,6 +6,7 @@ import TalismanForm from '@/components/TalismanForm';
 import TalismanTable from '@/components/TalismanTable';
 import ImportExport from '@/components/ImportExport';
 import TalismanAnalysis from '@/components/TalismanAnalysis';
+import ScrollToTop from '@/components/ScrollToTop';
 
 const STORAGE_KEY = 'mhwilds-talismans';
 
@@ -104,7 +105,12 @@ export default function Home() {
       />
 
       {/* Talisman Analysis */}
-      <TalismanAnalysis talismans={talismans} />
+      <TalismanAnalysis 
+        talismans={talismans}
+        onNavigateToTalisman={(talismanId) => {
+          // Will be handled by scrollToTalisman in the component
+        }}
+      />
 
       {/* Talisman Table */}
       <TalismanTable
@@ -113,6 +119,9 @@ export default function Home() {
         onDelete={handleDeleteTalisman}
         onReorder={handleReorder}
       />
+
+      {/* Scroll to Top Button */}
+      <ScrollToTop />
     </div>
   );
 }

@@ -36,13 +36,13 @@ export default function ImportExport({ talismans, onImport }: ImportExportProps)
     });
 
     // Build CSV with delimiter lines between rarity groups
-    const csvLines: string[] = [];
+    const csvLines: string[] = [DELIMITER_LINE]; // Start with delimiter
     rarityOrder.forEach(rarity => {
       if (groupedByRarity[rarity] && groupedByRarity[rarity].length > 0) {
         groupedByRarity[rarity].forEach(t => {
           csvLines.push(talismanToCSV(t));
         });
-        // Add delimiter after each rarity group (except the last one)
+        // Add delimiter after each rarity group
         csvLines.push(DELIMITER_LINE);
       }
     });
@@ -77,7 +77,7 @@ export default function ImportExport({ talismans, onImport }: ImportExportProps)
     });
 
     // Build CSV with delimiter lines between rarity groups
-    const csvLines: string[] = [CSV_HEADER];
+    const csvLines: string[] = [CSV_HEADER, DELIMITER_LINE]; // Header then delimiter
     rarityOrder.forEach(rarity => {
       if (groupedByRarity[rarity] && groupedByRarity[rarity].length > 0) {
         groupedByRarity[rarity].forEach(t => {

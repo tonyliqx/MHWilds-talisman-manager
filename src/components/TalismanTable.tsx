@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { UserTalisman, RARITY_LABELS } from '@/types/talisman';
 
 interface TalismanTableProps {
@@ -19,6 +19,39 @@ export default function TalismanTable({ talismans, onEdit, onDelete, onReorder }
       [sectionKey]: !prev[sectionKey]
     }));
   };
+
+  const expandSection = (sectionKey: string) => {
+    setExpandedSections(prev => ({
+      ...prev,
+      [sectionKey]: true
+    }));
+  };
+
+  // Listen for expand section events
+  useEffect(() => {
+    const handleExpandSection = (event: CustomEvent) => {
+      const { talismanId } = event.detail;
+      const talisman = talismans.find(t => t.id === talismanId);
+      if (talisman) {
+        // Determine which section this talisman belongs to
+        let sectionKey = '';
+        if (talisman.rarity === '稀有度8') sectionKey = 'rarity8';
+        else if (talisman.rarity === '稀有度7') sectionKey = 'rarity7';
+        else if (talisman.rarity === '稀有度6') sectionKey = 'rarity6';
+        else if (talisman.rarity === '稀有度5') sectionKey = 'rarity5';
+        else if (talisman.rarity === 'unknown') sectionKey = 'unknown';
+        
+        if (sectionKey) {
+          expandSection(sectionKey);
+        }
+      }
+    };
+
+    window.addEventListener('expandTalismanSection' as any, handleExpandSection);
+    return () => {
+      window.removeEventListener('expandTalismanSection' as any, handleExpandSection);
+    };
+  }, [talismans]);
 
   const handleDragStart = (e: React.DragEvent, index: number) => {
     e.dataTransfer.setData('text/plain', index.toString());
@@ -54,6 +87,7 @@ export default function TalismanTable({ talismans, onEdit, onDelete, onReorder }
   const renderTalismanRow = (talisman: UserTalisman, index: number) => (
     <tr
       key={talisman.id}
+      id={`talisman-row-${talisman.id}`}
       draggable
       onDragStart={(e) => handleDragStart(e, index)}
       onDragOver={handleDragOver}

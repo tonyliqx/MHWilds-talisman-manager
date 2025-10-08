@@ -5,6 +5,7 @@ import { UserTalisman, SLOT_DETAILED_MAPPINGS } from '@/types/talisman';
 
 interface TalismanAnalysisProps {
   talismans: UserTalisman[];
+  onNavigateToTalisman?: (talismanId: string) => void;
 }
 
 interface SkillComparison {
@@ -206,6 +207,27 @@ export default function TalismanAnalysis({ talismans }: TalismanAnalysisProps) {
   const [dominanceRelations, setDominanceRelations] = useState<DominanceRelation[]>([]);
   const [duplicates, setDuplicates] = useState<DuplicateGroup[]>([]);
 
+  const scrollToTalisman = (talismanId: string) => {
+    // Dispatch event to expand the section if needed
+    const expandEvent = new CustomEvent('expandTalismanSection', {
+      detail: { talismanId }
+    });
+    window.dispatchEvent(expandEvent);
+    
+    // Wait a brief moment for the section to expand, then scroll
+    setTimeout(() => {
+      const element = document.getElementById(`talisman-row-${talismanId}`);
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        // Add a highlight effect
+        element.classList.add('bg-yellow-200');
+        setTimeout(() => {
+          element.classList.remove('bg-yellow-200');
+        }, 2000);
+      }
+    }, 100);
+  };
+
   useEffect(() => {
     // Analyze talismans
     const newDominanceRelations: DominanceRelation[] = [];
@@ -297,6 +319,12 @@ export default function TalismanAnalysis({ talismans }: TalismanAnalysisProps) {
                             <div>{dominant.skill3 || '−'}</div>
                             <div className="text-xs text-gray-600">{dominant.slotDescription}</div>
                           </div>
+                          <button
+                            onClick={() => scrollToTalisman(dominant.id)}
+                            className="mt-2 px-3 py-1 bg-green-600 hover:bg-green-700 text-white text-xs rounded transition-colors"
+                          >
+                            View in List
+                          </button>
                         </div>
                         
                         <div className="text-center text-2xl font-bold text-gray-500">
@@ -312,6 +340,12 @@ export default function TalismanAnalysis({ talismans }: TalismanAnalysisProps) {
                             <div>{dominated.skill3 || '−'}</div>
                             <div className="text-xs text-gray-600">{dominated.slotDescription}</div>
                           </div>
+                          <button
+                            onClick={() => scrollToTalisman(dominated.id)}
+                            className="mt-2 px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-xs rounded transition-colors"
+                          >
+                            View in List
+                          </button>
                         </div>
                       </div>
                       <div className="mt-3 text-xs text-gray-600 text-center">
@@ -351,6 +385,17 @@ export default function TalismanAnalysis({ talismans }: TalismanAnalysisProps) {
                         <div>{representative.skill2 || '−'}</div>
                         <div>{representative.skill3 || '−'}</div>
                         <div className="text-xs text-gray-600">{representative.slotDescription}</div>
+                      </div>
+                      <div className="mt-3 flex flex-wrap gap-2 justify-center">
+                        {group.ids.map((id, i) => (
+                          <button
+                            key={id}
+                            onClick={() => scrollToTalisman(id)}
+                            className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs rounded transition-colors"
+                          >
+                            View Copy #{i + 1}
+                          </button>
+                        ))}
                       </div>
                     </div>
                   );
