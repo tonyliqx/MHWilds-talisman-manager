@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { UserTalisman, RARITY_LABELS } from '@/types/talisman';
 
 interface TalismanTableProps {
@@ -10,6 +11,15 @@ interface TalismanTableProps {
 }
 
 export default function TalismanTable({ talismans, onEdit, onDelete, onReorder }: TalismanTableProps) {
+  const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({});
+
+  const toggleSection = (sectionKey: string) => {
+    setExpandedSections(prev => ({
+      ...prev,
+      [sectionKey]: !prev[sectionKey]
+    }));
+  };
+
   const handleDragStart = (e: React.DragEvent, index: number) => {
     e.dataTransfer.setData('text/plain', index.toString());
   };
@@ -96,52 +106,64 @@ export default function TalismanTable({ talismans, onEdit, onDelete, onReorder }
     </tr>
   );
 
-  const renderRaritySection = (rarityTalismans: UserTalisman[], rarityLabel: string, rarityColor: string) => {
+  const renderRaritySection = (rarityTalismans: UserTalisman[], rarityLabel: string, rarityColor: string, sectionKey: string) => {
     if (rarityTalismans.length === 0) return null;
+
+    const isExpanded = expandedSections[sectionKey] || false;
 
     return (
       <div className="mh-card p-6 rounded-lg" key={rarityLabel}>
-        <h3 className={`text-xl font-bold mb-4 ${rarityColor}`}>
-          {rarityLabel} ({rarityTalismans.length})
-        </h3>
+        <button
+          onClick={() => toggleSection(sectionKey)}
+          className="w-full flex items-center justify-between text-left mb-4"
+        >
+          <h3 className={`text-xl font-bold ${rarityColor}`}>
+            {rarityLabel} ({rarityTalismans.length})
+          </h3>
+          <span className="text-2xl text-gray-500">
+            {isExpanded ? '−' : '+'}
+          </span>
+        </button>
         
-        <div className="overflow-x-auto">
-          <table className="w-full border-collapse">
-            <thead>
-              <tr className="bg-amber-200/10">
-                <th className="border border-amber-300/20 px-4 py-3 text-left text-gray-700 font-semibold">
-                  Rarity
-                </th>
-                <th className="border border-amber-300/20 px-4 py-3 text-left text-gray-700 font-semibold">
-                  Skills
-                </th>
-                <th className="border border-amber-300/20 px-4 py-3 text-left text-gray-700 font-semibold">
-                  Slots
-                </th>
-                <th className="border border-amber-300/20 px-4 py-3 text-left text-gray-700 font-semibold">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {rarityTalismans.map((talisman) => {
-                const globalIndex = talismans.indexOf(talisman);
-                return renderTalismanRow(talisman, globalIndex);
-              })}
-            </tbody>
-          </table>
-        </div>
+        {isExpanded && (
+          <div className="overflow-x-auto">
+            <table className="w-full border-collapse">
+              <thead>
+                <tr className="bg-amber-200/10">
+                  <th className="border border-amber-300/20 px-4 py-3 text-left text-gray-700 font-semibold">
+                    Rarity
+                  </th>
+                  <th className="border border-amber-300/20 px-4 py-3 text-left text-gray-700 font-semibold">
+                    Skills
+                  </th>
+                  <th className="border border-amber-300/20 px-4 py-3 text-left text-gray-700 font-semibold">
+                    Slots
+                  </th>
+                  <th className="border border-amber-300/20 px-4 py-3 text-left text-gray-700 font-semibold">
+                    Actions
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {rarityTalismans.map((talisman) => {
+                  const globalIndex = talismans.indexOf(talisman);
+                  return renderTalismanRow(talisman, globalIndex);
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
     );
   };
 
   return (
     <div className="space-y-6">
-      {renderRaritySection(rarity8, 'Rarity 8 Talismans', 'text-yellow-700')}
-      {renderRaritySection(rarity7, 'Rarity 7 Talismans', 'text-purple-700')}
-      {renderRaritySection(rarity6, 'Rarity 6 Talismans', 'text-blue-700')}
-      {renderRaritySection(rarity5, 'Rarity 5 Talismans', 'text-gray-700')}
-      {renderRaritySection(rarityUnknown, 'Unknown Rarity Talismans', 'text-red-700')}
+      {renderRaritySection(rarity8, 'Rarity 8 Talismans', 'text-yellow-700', 'rarity8')}
+      {renderRaritySection(rarity7, 'Rarity 7 Talismans', 'text-purple-700', 'rarity7')}
+      {renderRaritySection(rarity6, 'Rarity 6 Talismans', 'text-blue-700', 'rarity6')}
+      {renderRaritySection(rarity5, 'Rarity 5 Talismans', 'text-gray-700', 'rarity5')}
+      {renderRaritySection(rarityUnknown, 'Unknown Rarity Talismans', 'text-red-700', 'unknown')}
     </div>
   );
 }

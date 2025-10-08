@@ -5,6 +5,7 @@ import { UserTalisman } from '@/types/talisman';
 import TalismanForm from '@/components/TalismanForm';
 import TalismanTable from '@/components/TalismanTable';
 import ImportExport from '@/components/ImportExport';
+import TalismanAnalysis from '@/components/TalismanAnalysis';
 
 const STORAGE_KEY = 'mhwilds-talismans';
 
@@ -101,6 +102,9 @@ export default function Home() {
         talismans={talismans}
         onImport={handleImport}
       />
+
+      {/* Talisman Analysis */}
+      <TalismanAnalysis talismans={talismans} />
 
       {/* Talisman Table */}
       <TalismanTable
