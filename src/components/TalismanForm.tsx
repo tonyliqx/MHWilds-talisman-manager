@@ -66,6 +66,7 @@ function SkillAutocomplete({ label, value, availableSkills, onChange, fieldId }:
 
   const handleInputFocus = () => {
     setIsOpen(true);
+    setHighlightedIndex(-1); // Reset to allow Tab to start from first option
   };
 
   const handleInputBlur = () => {
@@ -116,9 +117,40 @@ function SkillAutocomplete({ label, value, availableSkills, onChange, fieldId }:
         break;
 
       case 'Tab':
-        // Allow tab to close dropdown and move to next field naturally
-        setIsOpen(false);
-        setHighlightedIndex(-1);
+        if (e.shiftKey) {
+          // Shift+Tab: Move backward
+          if (highlightedIndex <= 0) {
+            // At first option or before, close dropdown and let default Tab behavior work
+            setIsOpen(false);
+            setHighlightedIndex(-1);
+            // Don't prevent default - let tab move to previous field naturally
+          } else {
+            e.preventDefault();
+            setHighlightedIndex(prev => prev - 1);
+          }
+        } else {
+          // Tab: Move forward
+          if (highlightedIndex === -1 && filteredSkills.length > 0) {
+            // No option selected yet, move to first option
+            e.preventDefault();
+            setHighlightedIndex(0);
+          } else if (highlightedIndex >= 0 && highlightedIndex < filteredSkills.length - 1) {
+            // In the middle of options, move to next option
+            e.preventDefault();
+            setHighlightedIndex(prev => prev + 1);
+          } else if (highlightedIndex === filteredSkills.length - 1) {
+            // At last option, select it and close, then let tab move to next field
+            handleSkillSelect(filteredSkills[highlightedIndex]);
+            setIsOpen(false);
+            setHighlightedIndex(-1);
+            // Don't prevent default - let tab move to next field naturally
+          } else {
+            // No valid options or other case, close and move on
+            setIsOpen(false);
+            setHighlightedIndex(-1);
+            // Don't prevent default - let tab move to next field naturally
+          }
+        }
         break;
     }
   };
