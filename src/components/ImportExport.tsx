@@ -9,22 +9,91 @@ interface ImportExportProps {
   onImport: (talismans: UserTalisman[]) => void;
 }
 
+const DELIMITER_LINE = ',0,,0,,0,0,0,0,0,0,0';
+
 export default function ImportExport({ talismans, onImport }: ImportExportProps) {
   const [csvText, setCsvText] = useState('');
   const [error, setError] = useState('');
 
   const exportToCSV = () => {
-    // Export only the data rows, no header
-    const csvContent = talismans.map(talismanToCSV).join('\n');
+    // Sort talismans by rarity: 8, 7, 6, 5, then others
+    const rarityOrder = ['稀有度8', '稀有度7', '稀有度6', '稀有度5', 'unknown'];
+    const sortedTalismans = [...talismans].sort((a, b) => {
+      const indexA = rarityOrder.indexOf(a.rarity);
+      const indexB = rarityOrder.indexOf(b.rarity);
+      const orderA = indexA === -1 ? 999 : indexA;
+      const orderB = indexB === -1 ? 999 : indexB;
+      return orderA - orderB;
+    });
+
+    // Group by rarity
+    const groupedByRarity: { [key: string]: UserTalisman[] } = {};
+    sortedTalismans.forEach(t => {
+      if (!groupedByRarity[t.rarity]) {
+        groupedByRarity[t.rarity] = [];
+      }
+      groupedByRarity[t.rarity].push(t);
+    });
+
+    // Build CSV with delimiter lines between rarity groups
+    const csvLines: string[] = [];
+    rarityOrder.forEach(rarity => {
+      if (groupedByRarity[rarity] && groupedByRarity[rarity].length > 0) {
+        groupedByRarity[rarity].forEach(t => {
+          csvLines.push(talismanToCSV(t));
+        });
+        // Add delimiter after each rarity group (except the last one)
+        csvLines.push(DELIMITER_LINE);
+      }
+    });
     
+    // Remove trailing delimiter if exists
+    if (csvLines[csvLines.length - 1] === DELIMITER_LINE) {
+      csvLines.pop();
+    }
+
+    const csvContent = csvLines.join('\n');
     setCsvText(csvContent);
   };
 
   const downloadCSV = () => {
-    const csvContent = [
-      CSV_HEADER,
-      ...talismans.map(talismanToCSV)
-    ].join('\n');
+    // Sort talismans by rarity: 8, 7, 6, 5, then others
+    const rarityOrder = ['稀有度8', '稀有度7', '稀有度6', '稀有度5', 'unknown'];
+    const sortedTalismans = [...talismans].sort((a, b) => {
+      const indexA = rarityOrder.indexOf(a.rarity);
+      const indexB = rarityOrder.indexOf(b.rarity);
+      const orderA = indexA === -1 ? 999 : indexA;
+      const orderB = indexB === -1 ? 999 : indexB;
+      return orderA - orderB;
+    });
+
+    // Group by rarity
+    const groupedByRarity: { [key: string]: UserTalisman[] } = {};
+    sortedTalismans.forEach(t => {
+      if (!groupedByRarity[t.rarity]) {
+        groupedByRarity[t.rarity] = [];
+      }
+      groupedByRarity[t.rarity].push(t);
+    });
+
+    // Build CSV with delimiter lines between rarity groups
+    const csvLines: string[] = [CSV_HEADER];
+    rarityOrder.forEach(rarity => {
+      if (groupedByRarity[rarity] && groupedByRarity[rarity].length > 0) {
+        groupedByRarity[rarity].forEach(t => {
+          csvLines.push(talismanToCSV(t));
+        });
+        // Add delimiter after each rarity group
+        csvLines.push(DELIMITER_LINE);
+      }
+    });
+    
+    // Remove trailing delimiter if exists
+    if (csvLines[csvLines.length - 1] === DELIMITER_LINE) {
+      csvLines.pop();
+    }
+
+    const csvContent = csvLines.join('\n');
     
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
@@ -54,18 +123,21 @@ export default function ImportExport({ talismans, onImport }: ImportExportProps)
       }
 
       // For textbox import, assume no header row - all lines are data
-      const dataLines = lines;
+      // Filter out delimiter lines and empty lines
+      const dataLines = lines.filter(line => {
+        const trimmedLine = line.trim();
+        return trimmedLine && trimmedLine !== DELIMITER_LINE;
+      });
+      
       const importedTalismans: UserTalisman[] = [];
       
       dataLines.forEach((line, index) => {
-        if (line.trim()) {
-          try {
-            const talisman = csvToTalisman(line, index);
-            importedTalismans.push(talisman);
-          } catch (err) {
-            setError(`Error parsing row ${index + 1}: ${err instanceof Error ? err.message : 'Unknown error'}`);
-            return;
-          }
+        try {
+          const talisman = csvToTalisman(line, index);
+          importedTalismans.push(talisman);
+        } catch (err) {
+          setError(`Error parsing row ${index + 1}: ${err instanceof Error ? err.message : 'Unknown error'}`);
+          return;
         }
       });
 

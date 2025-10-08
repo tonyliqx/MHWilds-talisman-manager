@@ -37,8 +37,8 @@ export default function Home() {
       );
       setEditingTalisman(null);
     } else {
-      // Add new talisman
-      setTalismans(prev => [...prev, talisman]);
+      // Add new talisman at the top of the list
+      setTalismans(prev => [talisman, ...prev]);
     }
   };
 

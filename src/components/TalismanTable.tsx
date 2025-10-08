@@ -34,86 +34,114 @@ export default function TalismanTable({ talismans, onEdit, onDelete, onReorder }
     );
   }
 
-  return (
-    <div className="mh-card p-6 rounded-lg">
-      <h2 className="text-2xl font-bold text-gray-700 mb-6">Your Talismans ({talismans.length})</h2>
-      
-      <div className="overflow-x-auto">
-        <table className="w-full border-collapse">
-          <thead>
-            <tr className="bg-amber-200/10">
-              <th className="border border-amber-300/20 px-4 py-3 text-left text-gray-700 font-semibold">
-                Rarity
-              </th>
-              <th className="border border-amber-300/20 px-4 py-3 text-left text-gray-700 font-semibold">
-                Skills
-              </th>
-              <th className="border border-amber-300/20 px-4 py-3 text-left text-gray-700 font-semibold">
-                Slots
-              </th>
-              <th className="border border-amber-300/20 px-4 py-3 text-left text-gray-700 font-semibold">
-                Actions
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {talismans.map((talisman, index) => (
-              <tr
-                key={talisman.id}
-                draggable
-                onDragStart={(e) => handleDragStart(e, index)}
-                onDragOver={handleDragOver}
-                onDrop={(e) => handleDrop(e, index)}
-                className="hover:bg-amber-50/50 transition-colors cursor-move"
-              >
-                <td className="border border-amber-300/20 px-4 py-3 text-gray-700">
-                  <span className={`px-2 py-1 rounded text-xs font-medium ${
-                    talisman.rarity === 'unknown' ? 'bg-red-200 text-red-800' :
-                    talisman.rarity === '稀有度8' ? 'bg-yellow-200 text-yellow-800' :
-                    talisman.rarity === '稀有度7' ? 'bg-purple-200 text-purple-800' :
-                    talisman.rarity === '稀有度6' ? 'bg-blue-200 text-blue-800' :
-                    'bg-gray-200 text-gray-800'
-                  }`}>
-                    {RARITY_LABELS[talisman.rarity as keyof typeof RARITY_LABELS]}
-                  </span>
-                </td>
-                <td className="border border-amber-300/20 px-4 py-3 text-gray-700">
-                  <div className="space-y-1">
-                    {talisman.skill1 && (
-                      <div className="text-sm font-medium">{talisman.skill1}</div>
-                    )}
-                    {talisman.skill2 && (
-                      <div className="text-sm font-medium">{talisman.skill2}</div>
-                    )}
-                    {talisman.skill3 && (
-                      <div className="text-sm font-medium">{talisman.skill3}</div>
-                    )}
-                  </div>
-                </td>
-                <td className="border border-amber-300/20 px-4 py-3 text-gray-700 text-sm">
-                  {talisman.slotDescription}
-                </td>
-                <td className="border border-amber-300/20 px-4 py-3">
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => onEdit(talisman)}
-                      className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-sm transition-colors"
-                    >
-                      Edit
-                    </button>
-                    <button
-                      onClick={() => onDelete(talisman.id)}
-                      className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-sm transition-colors"
-                    >
-                      Delete
-                    </button>
-                  </div>
-                </td>
+  // Group talismans by rarity
+  const rarity8 = talismans.filter(t => t.rarity === '稀有度8');
+  const rarity7 = talismans.filter(t => t.rarity === '稀有度7');
+  const rarity6 = talismans.filter(t => t.rarity === '稀有度6');
+  const rarity5 = talismans.filter(t => t.rarity === '稀有度5');
+  const rarityUnknown = talismans.filter(t => t.rarity === 'unknown');
+
+  const renderTalismanRow = (talisman: UserTalisman, index: number) => (
+    <tr
+      key={talisman.id}
+      draggable
+      onDragStart={(e) => handleDragStart(e, index)}
+      onDragOver={handleDragOver}
+      onDrop={(e) => handleDrop(e, index)}
+      className="hover:bg-amber-50/50 transition-colors cursor-move"
+    >
+      <td className="border border-amber-300/20 px-4 py-3 text-gray-700">
+        <span className={`px-2 py-1 rounded text-xs font-medium ${
+          talisman.rarity === 'unknown' ? 'bg-red-200 text-red-800' :
+          talisman.rarity === '稀有度8' ? 'bg-yellow-200 text-yellow-800' :
+          talisman.rarity === '稀有度7' ? 'bg-purple-200 text-purple-800' :
+          talisman.rarity === '稀有度6' ? 'bg-blue-200 text-blue-800' :
+          'bg-gray-200 text-gray-800'
+        }`}>
+          {RARITY_LABELS[talisman.rarity as keyof typeof RARITY_LABELS]}
+        </span>
+      </td>
+      <td className="border border-amber-300/20 px-4 py-3 text-gray-700">
+        <div className="space-y-1">
+          {talisman.skill1 && (
+            <div className="text-sm font-medium">{talisman.skill1}</div>
+          )}
+          {talisman.skill2 && (
+            <div className="text-sm font-medium">{talisman.skill2}</div>
+          )}
+          {talisman.skill3 && (
+            <div className="text-sm font-medium">{talisman.skill3}</div>
+          )}
+        </div>
+      </td>
+      <td className="border border-amber-300/20 px-4 py-3 text-gray-700 text-sm">
+        {talisman.slotDescription}
+      </td>
+      <td className="border border-amber-300/20 px-4 py-3">
+        <div className="flex gap-2">
+          <button
+            onClick={() => onEdit(talisman)}
+            className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-sm transition-colors"
+          >
+            Edit
+          </button>
+          <button
+            onClick={() => onDelete(talisman.id)}
+            className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-sm transition-colors"
+          >
+            Delete
+          </button>
+        </div>
+      </td>
+    </tr>
+  );
+
+  const renderRaritySection = (rarityTalismans: UserTalisman[], rarityLabel: string, rarityColor: string) => {
+    if (rarityTalismans.length === 0) return null;
+
+    return (
+      <div className="mh-card p-6 rounded-lg" key={rarityLabel}>
+        <h3 className={`text-xl font-bold mb-4 ${rarityColor}`}>
+          {rarityLabel} ({rarityTalismans.length})
+        </h3>
+        
+        <div className="overflow-x-auto">
+          <table className="w-full border-collapse">
+            <thead>
+              <tr className="bg-amber-200/10">
+                <th className="border border-amber-300/20 px-4 py-3 text-left text-gray-700 font-semibold">
+                  Rarity
+                </th>
+                <th className="border border-amber-300/20 px-4 py-3 text-left text-gray-700 font-semibold">
+                  Skills
+                </th>
+                <th className="border border-amber-300/20 px-4 py-3 text-left text-gray-700 font-semibold">
+                  Slots
+                </th>
+                <th className="border border-amber-300/20 px-4 py-3 text-left text-gray-700 font-semibold">
+                  Actions
+                </th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {rarityTalismans.map((talisman) => {
+                const globalIndex = talismans.indexOf(talisman);
+                return renderTalismanRow(talisman, globalIndex);
+              })}
+            </tbody>
+          </table>
+        </div>
       </div>
+    );
+  };
+
+  return (
+    <div className="space-y-6">
+      {renderRaritySection(rarity8, 'Rarity 8 Talismans', 'text-yellow-700')}
+      {renderRaritySection(rarity7, 'Rarity 7 Talismans', 'text-purple-700')}
+      {renderRaritySection(rarity6, 'Rarity 6 Talismans', 'text-blue-700')}
+      {renderRaritySection(rarity5, 'Rarity 5 Talismans', 'text-gray-700')}
+      {renderRaritySection(rarityUnknown, 'Unknown Rarity Talismans', 'text-red-700')}
     </div>
   );
 }
