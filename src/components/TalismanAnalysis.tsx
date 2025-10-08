@@ -24,7 +24,7 @@ interface DuplicateGroup {
 }
 
 // Parse skill into name and level
-function parseSkill(skill: string): SkillComparison | null {
+export function parseSkill(skill: string): SkillComparison | null {
   if (!skill || skill === '无') return null;
   
   const match = skill.match(/^(.+)Lv(\d+)$/);
@@ -35,7 +35,7 @@ function parseSkill(skill: string): SkillComparison | null {
 }
 
 // Compare two skills: returns 1 if skill1 > skill2, 0 if equal, -1 if skill1 < skill2, null if incomparable
-function compareSkills(skill1: string, skill2: string): number | null {
+export function compareSkills(skill1: string, skill2: string): number | null {
   const parsed1 = parseSkill(skill1);
   const parsed2 = parseSkill(skill2);
   
@@ -56,7 +56,7 @@ function compareSkills(skill1: string, skill2: string): number | null {
 }
 
 // Check if slotPt1 is better than or equal to slotPt2
-function compareSlots(slotPt1: number, slotPt2: number): number {
+export function compareSlots(slotPt1: number, slotPt2: number): number {
   if (slotPt1 === slotPt2) return 0;
   if (slotPt2 === 0) return 1;
   if (slotPt1 === 0) return -1;
