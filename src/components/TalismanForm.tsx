@@ -58,6 +58,7 @@ function SkillAutocomplete({ label, value, availableSkills, onChange, fieldId }:
   };
 
   const handleSkillSelect = (skill: string) => {
+    if (!skill) return; // Safety check: don't select undefined/null/empty
     setInputValue(skill);
     setIsOpen(false);
     setHighlightedIndex(-1);
@@ -81,8 +82,10 @@ function SkillAutocomplete({ label, value, availableSkills, onChange, fieldId }:
     if (!isOpen) {
       if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
         e.preventDefault();
-        setIsOpen(true);
-        setHighlightedIndex(0);
+        if (filteredSkills.length > 0) {
+          setIsOpen(true);
+          setHighlightedIndex(0);
+        }
       }
       return;
     }
@@ -96,21 +99,25 @@ function SkillAutocomplete({ label, value, availableSkills, onChange, fieldId }:
 
       case 'ArrowDown':
         e.preventDefault();
-        setHighlightedIndex(prev => 
-          prev < filteredSkills.length - 1 ? prev + 1 : prev
-        );
+        if (filteredSkills.length > 0) {
+          setHighlightedIndex(prev => 
+            prev < filteredSkills.length - 1 ? prev + 1 : prev
+          );
+        }
         break;
 
       case 'ArrowUp':
         e.preventDefault();
-        setHighlightedIndex(prev => (prev > 0 ? prev - 1 : 0));
+        if (filteredSkills.length > 0) {
+          setHighlightedIndex(prev => (prev > 0 ? prev - 1 : 0));
+        }
         break;
 
       case 'Enter':
         e.preventDefault();
-        if (highlightedIndex >= 0 && highlightedIndex < filteredSkills.length) {
+        if (highlightedIndex >= 0 && highlightedIndex < filteredSkills.length && filteredSkills[highlightedIndex]) {
           handleSkillSelect(filteredSkills[highlightedIndex]);
-        } else if (filteredSkills.length === 1) {
+        } else if (filteredSkills.length === 1 && filteredSkills[0]) {
           // If there's only one option, select it
           handleSkillSelect(filteredSkills[0]);
         }
@@ -119,8 +126,8 @@ function SkillAutocomplete({ label, value, availableSkills, onChange, fieldId }:
       case 'Tab':
         if (e.shiftKey) {
           // Shift+Tab: Move backward
-          if (highlightedIndex <= 0) {
-            // At first option or before, close dropdown and let default Tab behavior work
+          if (highlightedIndex <= 0 || filteredSkills.length === 0) {
+            // At first option or before, or no options, close dropdown and let default Tab behavior work
             setIsOpen(false);
             setHighlightedIndex(-1);
             // Don't prevent default - let tab move to previous field naturally
@@ -130,22 +137,27 @@ function SkillAutocomplete({ label, value, availableSkills, onChange, fieldId }:
           }
         } else {
           // Tab: Move forward
-          if (highlightedIndex === -1 && filteredSkills.length > 0) {
+          if (filteredSkills.length === 0) {
+            // No options available, close and move to next field
+            setIsOpen(false);
+            setHighlightedIndex(-1);
+            // Don't prevent default - let tab move to next field naturally
+          } else if (highlightedIndex === -1) {
             // No option selected yet, move to first option
             e.preventDefault();
             setHighlightedIndex(0);
-          } else if (highlightedIndex >= 0 && highlightedIndex < filteredSkills.length - 1) {
+          } else if (highlightedIndex < filteredSkills.length - 1) {
             // In the middle of options, move to next option
             e.preventDefault();
             setHighlightedIndex(prev => prev + 1);
-          } else if (highlightedIndex === filteredSkills.length - 1) {
-            // At last option, select it and close, then let tab move to next field
+          } else if (highlightedIndex === filteredSkills.length - 1 && filteredSkills[highlightedIndex]) {
+            // At last option and it exists, select it and close, then let tab move to next field
             handleSkillSelect(filteredSkills[highlightedIndex]);
             setIsOpen(false);
             setHighlightedIndex(-1);
             // Don't prevent default - let tab move to next field naturally
           } else {
-            // No valid options or other case, close and move on
+            // Safety fallback: close and move on
             setIsOpen(false);
             setHighlightedIndex(-1);
             // Don't prevent default - let tab move to next field naturally
