@@ -85,6 +85,18 @@ describe('TalismanAnalysis - Slot Comparison', () => {
     expect(compareSlots(6, 4)).toBe(1);
   });
 
+  test('slotPt 6 > slotPt 1 (grade 3 > grade 1)', () => {
+    // slotPt 1: [1,0,0,0,0,0] - 1x grade 1 armor
+    // slotPt 6: [3,0,0,0,0,0] - 1x grade 3 armor
+    expect(compareSlots(6, 1)).toBe(1);
+  });
+
+  test('slotPt 4 > slotPt 1 (grade 2 > grade 1)', () => {
+    // slotPt 1: [1,0,0,0,0,0] - 1x grade 1 armor
+    // slotPt 4: [2,0,0,0,0,0] - 1x grade 2 armor
+    expect(compareSlots(4, 1)).toBe(1);
+  });
+
   test('slotPt 13 > slotPt 12 > slotPt 11 (weapon slot progression)', () => {
     // slotPt 11: [0,0,0,1,0,0] - 1x grade 1 weapon
     // slotPt 12: [1,0,0,1,0,0] - 1x grade 1 weapon + 1x grade 1 armor
