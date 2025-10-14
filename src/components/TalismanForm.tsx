@@ -3,6 +3,49 @@
 import { useState, useEffect } from 'react';
 import { UserTalisman, TalismanTemplate, SLOT_MAPPINGS, RARITY_OPTIONS, RARITY_LABELS } from '@/types/talisman';
 import { loadTalismanTemplates, getAvailableSlots, getAvailableSkills1, getAvailableSkills2, getAvailableSkills3, generateTalismanId } from '@/lib/talisman-utils';
+import Image from 'next/image';
+
+// Helper function to get slot icons based on slotPt
+function getSlotIcons(slotPt: number): string[] {
+  const icons: string[] = [];
+  
+  switch (slotPt) {
+    case 1: // 防具1级孔x1
+      icons.push('/icons/slots/armor_grade1.png');
+      break;
+    case 2: // 防具1级孔x2
+      icons.push('/icons/slots/armor_grade1.png');
+      icons.push('/icons/slots/armor_grade1.png');
+      break;
+    case 4: // 防具2级孔x1
+      icons.push('/icons/slots/armor_grade2.png');
+      break;
+    case 5: // 防具2级孔x1,防具1级孔x1
+      icons.push('/icons/slots/armor_grade2.png');
+      icons.push('/icons/slots/armor_grade1.png');
+      break;
+    case 6: // 防具3级孔x1
+      icons.push('/icons/slots/armor_grade3.png');
+      break;
+    case 11: // 武器1级孔x1
+      icons.push('/icons/slots/weapon_grade1.png');
+      break;
+    case 12: // 武器1级孔x1,防具1级孔x1
+      icons.push('/icons/slots/weapon_grade1.png');
+      icons.push('/icons/slots/armor_grade1.png');
+      break;
+    case 13: // 武器1级孔x1,防具1级孔x2
+      icons.push('/icons/slots/weapon_grade1.png');
+      icons.push('/icons/slots/armor_grade1.png');
+      icons.push('/icons/slots/armor_grade1.png');
+      break;
+    default:
+      // Fallback for unknown slot types
+      icons.push('/icons/slots/armor_grade1.png');
+  }
+  
+  return icons;
+}
 
 interface TalismanFormProps {
   onSubmit: (talisman: UserTalisman) => void;
@@ -358,21 +401,34 @@ export default function TalismanForm({ onSubmit, editingTalisman, onCancel }: Ta
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Decoration Slots
                   </label>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                    {availableSlots.map(mapping => (
-                      <button
-                        key={mapping.slotPt}
-                        type="button"
-                        onClick={() => handleSlotChange(mapping.slotPt)}
-                        className={`px-4 py-3 rounded-lg font-medium text-sm transition-colors text-left ${
-                          formData.slotPt === mapping.slotPt
-                            ? 'bg-amber-600 text-white'
-                            : 'bg-amber-100 text-amber-800 hover:bg-amber-200'
-                        }`}
-                      >
-                        {mapping.description}
-                      </button>
-                    ))}
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    {availableSlots.map(mapping => {
+                      const icons = getSlotIcons(mapping.slotPt);
+                      return (
+                        <button
+                          key={mapping.slotPt}
+                          type="button"
+                          onClick={() => handleSlotChange(mapping.slotPt)}
+                          className={`px-3 py-3 rounded-lg font-medium text-sm transition-colors flex items-center justify-center gap-1.5 min-w-0 ${
+                            formData.slotPt === mapping.slotPt
+                              ? 'bg-amber-600 text-white'
+                              : 'bg-gray-700 text-white hover:bg-gray-600'
+                          }`}
+                          title={mapping.description}
+                        >
+                          {icons.map((icon, index) => (
+                            <Image
+                              key={index}
+                              src={icon}
+                              alt={`Slot ${index + 1}`}
+                              width={44}
+                              height={44}
+                              className="inline-block flex-shrink-0"
+                            />
+                          ))}
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
 
