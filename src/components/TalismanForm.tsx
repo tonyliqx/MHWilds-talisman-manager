@@ -8,40 +8,41 @@ import Image from 'next/image';
 // Helper function to get slot icons based on slotPt
 function getSlotIcons(slotPt: number): string[] {
   const icons: string[] = [];
+  const basePath = process.env.NODE_ENV === 'production' ? '/MHWilds-talisman-manager' : '';
   
   switch (slotPt) {
     case 1: // 防具1级孔x1
-      icons.push('/icons/slots/armor_grade1.png');
+      icons.push(`${basePath}/icons/slots/armor_grade1.png`);
       break;
     case 2: // 防具1级孔x2
-      icons.push('/icons/slots/armor_grade1.png');
-      icons.push('/icons/slots/armor_grade1.png');
+      icons.push(`${basePath}/icons/slots/armor_grade1.png`);
+      icons.push(`${basePath}/icons/slots/armor_grade1.png`);
       break;
     case 4: // 防具2级孔x1
-      icons.push('/icons/slots/armor_grade2.png');
+      icons.push(`${basePath}/icons/slots/armor_grade2.png`);
       break;
     case 5: // 防具2级孔x1,防具1级孔x1
-      icons.push('/icons/slots/armor_grade2.png');
-      icons.push('/icons/slots/armor_grade1.png');
+      icons.push(`${basePath}/icons/slots/armor_grade2.png`);
+      icons.push(`${basePath}/icons/slots/armor_grade1.png`);
       break;
     case 6: // 防具3级孔x1
-      icons.push('/icons/slots/armor_grade3.png');
+      icons.push(`${basePath}/icons/slots/armor_grade3.png`);
       break;
     case 11: // 武器1级孔x1
-      icons.push('/icons/slots/weapon_grade1.png');
+      icons.push(`${basePath}/icons/slots/weapon_grade1.png`);
       break;
     case 12: // 武器1级孔x1,防具1级孔x1
-      icons.push('/icons/slots/weapon_grade1.png');
-      icons.push('/icons/slots/armor_grade1.png');
+      icons.push(`${basePath}/icons/slots/weapon_grade1.png`);
+      icons.push(`${basePath}/icons/slots/armor_grade1.png`);
       break;
     case 13: // 武器1级孔x1,防具1级孔x2
-      icons.push('/icons/slots/weapon_grade1.png');
-      icons.push('/icons/slots/armor_grade1.png');
-      icons.push('/icons/slots/armor_grade1.png');
+      icons.push(`${basePath}/icons/slots/weapon_grade1.png`);
+      icons.push(`${basePath}/icons/slots/armor_grade1.png`);
+      icons.push(`${basePath}/icons/slots/armor_grade1.png`);
       break;
     default:
       // Fallback for unknown slot types
-      icons.push('/icons/slots/armor_grade1.png');
+      icons.push(`${basePath}/icons/slots/armor_grade1.png`);
   }
   
   return icons;
